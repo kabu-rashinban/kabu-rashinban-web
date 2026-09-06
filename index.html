@@ -35,6 +35,7 @@
     <p>監視銘柄の株価到達や新着IRを通知します。</p>
     <button class="notification" id="notificationButton">通知を受け取る</button>
     <div id="notificationStatus"></div>
+    <div style="margin-top:8px;color:#9ca3af;font-size:12px;">Push版 v2</div>
     <div id="subscriptionBox">
       <p><strong>通知先データ</strong><br>次の設定で1回だけ使います。公開しないでください。</p>
       <textarea id="subscriptionText" readonly></textarea>
@@ -127,8 +128,7 @@ async function enableNotifications() {
   } catch (error) {
     console.error(error);
     notificationStatus.textContent = "通知設定でエラーが発生しました。";
-    alert("通知設定でエラーが発生しました。
-" + error.message);
+    alert("通知設定でエラーが発生しました。\n" + error.message);
   }
 }
 
