@@ -3,329 +3,160 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>株の羅針盤</title>
-
-  <!-- PWA -->
   <link rel="manifest" href="./manifest.webmanifest">
-
   <meta name="theme-color" content="#f5f7fa">
-
-  <!-- iPhone / iPad -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="株の羅針盤">
-
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 0;
-      background: #f5f7fa;
-      color: #1f2937;
-    }
-
-    main {
-      max-width: 800px;
-      margin: auto;
-      padding: 32px 20px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 24px;
-      margin-top: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    }
-
-    h1 {
-      margin-bottom: 8px;
-    }
-
-    .sub {
-      color: #6b7280;
-    }
-
-    button {
-      border: 0;
-      border-radius: 10px;
-      padding: 12px 18px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .notification {
-      background: #2563eb;
-      color: white;
-    }
-
-    .notification.enabled {
-      background: #16a34a;
-    }
-
-    input {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      font-size: 16px;
-    }
-
-    #notificationStatus {
-      margin-top: 14px;
-      color: #6b7280;
-      font-size: 14px;
-    }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; background:#f5f7fa; color:#1f2937; }
+    main { max-width:800px; margin:auto; padding:32px 20px; }
+    .card { background:white; border-radius:16px; padding:24px; margin-top:20px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+    h1 { margin-bottom:8px; }
+    .sub { color:#6b7280; }
+    button { border:0; border-radius:10px; padding:12px 18px; font-size:16px; cursor:pointer; }
+    .notification { background:#2563eb; color:white; }
+    .notification.enabled { background:#16a34a; }
+    input, textarea { box-sizing:border-box; width:100%; padding:12px; margin:8px 0; border:1px solid #d1d5db; border-radius:10px; font-size:16px; }
+    textarea { min-height:160px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+    #notificationStatus { margin-top:14px; color:#6b7280; font-size:14px; }
+    #subscriptionBox { display:none; margin-top:18px; }
+    .copy { background:#e5e7eb; color:#111827; }
   </style>
 </head>
-
 <body>
+<main>
+  <h1>🧭 株の羅針盤</h1>
+  <div class="sub">日本株の監視・IR・株価アラート</div>
 
-  <main>
-
-    <h1>🧭 株の羅針盤</h1>
-
-    <div class="sub">
-      日本株の監視・IR・株価アラート
+  <div class="card">
+    <h2>🔔 プッシュ通知</h2>
+    <p>監視銘柄の株価到達や新着IRを通知します。</p>
+    <button class="notification" id="notificationButton">通知を受け取る</button>
+    <div id="notificationStatus"></div>
+    <div id="subscriptionBox">
+      <p><strong>通知先データ</strong><br>次の設定で1回だけ使います。公開しないでください。</p>
+      <textarea id="subscriptionText" readonly></textarea>
+      <button class="copy" id="copySubscription">コピー</button>
     </div>
+  </div>
 
-    <div class="card">
-      <h2>🔔 プッシュ通知</h2>
+  <div class="card">
+    <h2>＋ 監視銘柄を追加</h2>
+    <input type="text" placeholder="銘柄コード または 銘柄名">
+    <button>監視銘柄に追加</button>
+  </div>
 
-      <p>
-        監視銘柄の株価到達や新着IRを通知します。
-      </p>
+  <div class="card">
+    <h2>👀 監視銘柄</h2>
+    <p>ここに登録した銘柄が表示されます。</p>
+  </div>
+</main>
 
-      <button
-        class="notification"
-        id="notificationButton"
-      >
-        通知を受け取る
-      </button>
+<script>
+const VAPID_PUBLIC_KEY = "BFHwW4fAJK_n6KbbnGKY-ozxPGcZFl6A413YbtoIcFl35Rxw8jomywghvSZyOhR17hLvEU4fzCrS_21dF-yHA68";
+const notificationButton = document.getElementById("notificationButton");
+const notificationStatus = document.getElementById("notificationStatus");
+const subscriptionBox = document.getElementById("subscriptionBox");
+const subscriptionText = document.getElementById("subscriptionText");
+const copySubscription = document.getElementById("copySubscription");
 
-      <div id="notificationStatus"></div>
-    </div>
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
 
-    <div class="card">
-      <h2>＋ 監視銘柄を追加</h2>
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
 
-      <input
-        type="text"
-        placeholder="銘柄コード または 銘柄名"
-      >
+function isIOS() {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
 
-      <button>
-        監視銘柄に追加
-      </button>
-    </div>
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) throw new Error("Service Worker非対応です");
+  return await navigator.serviceWorker.register("./sw.js");
+}
 
-    <div class="card">
-      <h2>👀 監視銘柄</h2>
+function showSubscription(subscription) {
+  subscriptionText.value = JSON.stringify(subscription.toJSON());
+  subscriptionBox.style.display = "block";
+}
 
-      <p>
-        ここに登録した銘柄が表示されます。
-      </p>
-    </div>
-
-  </main>
-
-  <script>
-    const notificationButton =
-      document.getElementById("notificationButton");
-
-    const notificationStatus =
-      document.getElementById("notificationStatus");
-
-
-    // Service Worker 登録
-    async function registerServiceWorker() {
-
-      if (!("serviceWorker" in navigator)) {
-        throw new Error(
-          "このブラウザはService Workerに対応していません。"
-        );
-      }
-
-      const registration =
-        await navigator.serviceWorker.register("./sw.js");
-
-      console.log(
-        "Service Worker registered:",
-        registration
-      );
-
-      return registration;
+async function enableNotifications() {
+  try {
+    if (!("Notification" in window) || !("PushManager" in window)) {
+      alert("この端末ではWeb Pushを利用できません。");
+      return;
+    }
+    if (isIOS() && !isStandalone()) {
+      alert("iPhone / iPadではSafariの共有ボタンから『ホーム画面に追加』し、ホーム画面の『株の羅針盤』から開いてください。");
+      return;
     }
 
-
-    // ホーム画面アプリとして起動しているか
-    function isStandalone() {
-
-      return (
-        window.matchMedia(
-          "(display-mode: standalone)"
-        ).matches ||
-        window.navigator.standalone === true
-      );
-
+    notificationStatus.textContent = "通知を登録しています…";
+    const registration = await registerServiceWorker();
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      notificationStatus.textContent = "通知が許可されていません。";
+      return;
     }
 
-
-    // iPhone / iPad判定
-    function isIOS() {
-
-      return /iPhone|iPad|iPod/i.test(
-        navigator.userAgent
-      );
-
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
     }
 
+    notificationButton.textContent = "通知 ON";
+    notificationButton.classList.add("enabled");
+    notificationStatus.textContent = "Web Pushの登録ができました。";
+    showSubscription(subscription);
 
-    async function enableNotifications() {
+    await registration.showNotification("🧭 株の羅針盤", {
+      body: "本物のプッシュ通知を受け取る準備ができました。",
+      tag: "kabu-rashinban-push-ready",
+      data: { url: "./" }
+    });
+  } catch (error) {
+    console.error(error);
+    notificationStatus.textContent = "通知設定でエラーが発生しました。";
+    alert("通知設定でエラーが発生しました。
+" + error.message);
+  }
+}
 
-      try {
+notificationButton.addEventListener("click", enableNotifications);
+copySubscription.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(subscriptionText.value);
+    copySubscription.textContent = "コピー済み";
+  } catch {
+    subscriptionText.focus();
+    subscriptionText.select();
+  }
+});
 
-        if (!("Notification" in window)) {
-
-          alert(
-            "このブラウザでは通知機能を利用できません。"
-          );
-
-          return;
-        }
-
-
-        /*
-          iPhone / iPadでは
-          ホーム画面に追加したWebアプリから
-          通知を許可する
-        */
-        if (isIOS() && !isStandalone()) {
-
-          alert(
-            "iPhone / iPadでは、まずSafariの共有ボタンから「ホーム画面に追加」してください。\n\nその後、ホーム画面の「株の羅針盤」から開いて、もう一度このボタンを押してください。"
-          );
-
-          return;
-        }
-
-
-        notificationStatus.textContent =
-          "通知機能を準備しています…";
-
-
-        const registration =
-          await registerServiceWorker();
-
-
-        const permission =
-          await Notification.requestPermission();
-
-
-        if (permission === "granted") {
-
-          notificationButton.textContent =
-            "通知 ON";
-
-          notificationButton.classList.add(
-            "enabled"
-          );
-
-          notificationStatus.textContent =
-            "通知が許可されました。";
-
-
-          /*
-            動作確認用通知
-          */
-          await registration.showNotification(
-            "🧭 株の羅針盤",
-            {
-              body:
-                "通知の準備ができました。重要IRや株価アラートをここに届けます。",
-              tag:
-                "kabu-rashinban-test",
-              data: {
-                url: "./"
-              }
-            }
-          );
-
-        } else if (permission === "denied") {
-
-          notificationStatus.textContent =
-            "通知が拒否されています。端末の設定から通知を許可してください。";
-
-        } else {
-
-          notificationStatus.textContent =
-            "通知の許可が完了しませんでした。";
-
-        }
-
-      } catch (error) {
-
-        console.error(error);
-
-        notificationStatus.textContent =
-          "通知の設定中にエラーが発生しました。";
-
-        alert(
-          "通知設定でエラーが発生しました。\n" +
-          error.message
-        );
-
-      }
-
+window.addEventListener("load", async () => {
+  try {
+    const registration = await registerServiceWorker();
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      notificationButton.textContent = "通知 ON";
+      notificationButton.classList.add("enabled");
+      notificationStatus.textContent = "Web Pushは登録済みです。";
+      showSubscription(subscription);
+    } else if ("Notification" in window && Notification.permission === "granted") {
+      notificationStatus.textContent = "通知許可済みです。ボタンを押してWeb Pushを登録してください。";
     }
-
-
-    notificationButton.addEventListener(
-      "click",
-      enableNotifications
-    );
-
-
-    // ページ読み込み時にもService Workerを登録
-    window.addEventListener(
-      "load",
-      async () => {
-
-        try {
-
-          await registerServiceWorker();
-
-          if (
-            "Notification" in window &&
-            Notification.permission === "granted"
-          ) {
-
-            notificationButton.textContent =
-              "通知 ON";
-
-            notificationButton.classList.add(
-              "enabled"
-            );
-
-            notificationStatus.textContent =
-              "通知は許可されています。";
-
-          }
-
-        } catch (error) {
-
-          console.error(
-            "Service Worker registration failed:",
-            error
-          );
-
-        }
-
-      }
-    );
-  </script>
-
+  } catch (e) { console.error(e); }
+});
+</script>
 </body>
 </html>
