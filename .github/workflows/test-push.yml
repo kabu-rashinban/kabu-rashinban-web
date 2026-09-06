@@ -1,0 +1,55 @@
+name: Test Push
+
+on:
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install web-push
+        run: npm install web-push
+
+      - name: Send test push
+        env:
+          PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+
+        run: |
+          node <<'NODE'
+          const webpush = require("web-push");
+
+          const publicKey =
+            "BFHwW4fAJK_n6KbbnGKY-ozxPGcZFl6A413YbtoIcFl35Rxw8jomywghvSZyOhR17hLvEU4fzCrS_21dF-yHA68";
+
+          const privateKey =
+            process.env.VAPID_PRIVATE_KEY;
+
+          const subscription =
+            JSON.parse(process.env.PUSH_SUBSCRIPTION);
+
+          webpush.setVapidDetails(
+            "https://kabu-rashinban.github.io/kabu-rashinban-web/",
+            publicKey,
+            privateKey
+          );
+
+          const payload = JSON.stringify({
+            title: "🧭 株の羅針盤",
+            body: "外部からのWeb Pushテストに成功しました。",
+            url: "https://kabu-rashinban.github.io/kabu-rashinban-web/"
+          });
+
+          webpush.sendNotification(
+            subscription,
+            payload
+          )
+          .then(result => {
+            console.log("Push sent:", result.statusCode);
+          })
+          .catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
