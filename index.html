@@ -6,6 +6,16 @@
 
   <title>株の羅針盤</title>
 
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest">
+
+  <meta name="theme-color" content="#f5f7fa">
+
+  <!-- iPhone / iPad -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="株の羅針盤">
+
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -49,6 +59,10 @@
       color: white;
     }
 
+    .notification.enabled {
+      background: #16a34a;
+    }
+
     input {
       box-sizing: border-box;
       width: 100%;
@@ -57,6 +71,12 @@
       border: 1px solid #d1d5db;
       border-radius: 10px;
       font-size: 16px;
+    }
+
+    #notificationStatus {
+      margin-top: 14px;
+      color: #6b7280;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -78,9 +98,14 @@
         監視銘柄の株価到達や新着IRを通知します。
       </p>
 
-      <button class="notification">
+      <button
+        class="notification"
+        id="notificationButton"
+      >
         通知を受け取る
       </button>
+
+      <div id="notificationStatus"></div>
     </div>
 
     <div class="card">
@@ -105,6 +130,202 @@
     </div>
 
   </main>
+
+  <script>
+    const notificationButton =
+      document.getElementById("notificationButton");
+
+    const notificationStatus =
+      document.getElementById("notificationStatus");
+
+
+    // Service Worker 登録
+    async function registerServiceWorker() {
+
+      if (!("serviceWorker" in navigator)) {
+        throw new Error(
+          "このブラウザはService Workerに対応していません。"
+        );
+      }
+
+      const registration =
+        await navigator.serviceWorker.register("./sw.js");
+
+      console.log(
+        "Service Worker registered:",
+        registration
+      );
+
+      return registration;
+    }
+
+
+    // ホーム画面アプリとして起動しているか
+    function isStandalone() {
+
+      return (
+        window.matchMedia(
+          "(display-mode: standalone)"
+        ).matches ||
+        window.navigator.standalone === true
+      );
+
+    }
+
+
+    // iPhone / iPad判定
+    function isIOS() {
+
+      return /iPhone|iPad|iPod/i.test(
+        navigator.userAgent
+      );
+
+    }
+
+
+    async function enableNotifications() {
+
+      try {
+
+        if (!("Notification" in window)) {
+
+          alert(
+            "このブラウザでは通知機能を利用できません。"
+          );
+
+          return;
+        }
+
+
+        /*
+          iPhone / iPadでは
+          ホーム画面に追加したWebアプリから
+          通知を許可する
+        */
+        if (isIOS() && !isStandalone()) {
+
+          alert(
+            "iPhone / iPadでは、まずSafariの共有ボタンから「ホーム画面に追加」してください。\n\nその後、ホーム画面の「株の羅針盤」から開いて、もう一度このボタンを押してください。"
+          );
+
+          return;
+        }
+
+
+        notificationStatus.textContent =
+          "通知機能を準備しています…";
+
+
+        const registration =
+          await registerServiceWorker();
+
+
+        const permission =
+          await Notification.requestPermission();
+
+
+        if (permission === "granted") {
+
+          notificationButton.textContent =
+            "通知 ON";
+
+          notificationButton.classList.add(
+            "enabled"
+          );
+
+          notificationStatus.textContent =
+            "通知が許可されました。";
+
+
+          /*
+            動作確認用通知
+          */
+          await registration.showNotification(
+            "🧭 株の羅針盤",
+            {
+              body:
+                "通知の準備ができました。重要IRや株価アラートをここに届けます。",
+              tag:
+                "kabu-rashinban-test",
+              data: {
+                url: "./"
+              }
+            }
+          );
+
+        } else if (permission === "denied") {
+
+          notificationStatus.textContent =
+            "通知が拒否されています。端末の設定から通知を許可してください。";
+
+        } else {
+
+          notificationStatus.textContent =
+            "通知の許可が完了しませんでした。";
+
+        }
+
+      } catch (error) {
+
+        console.error(error);
+
+        notificationStatus.textContent =
+          "通知の設定中にエラーが発生しました。";
+
+        alert(
+          "通知設定でエラーが発生しました。\n" +
+          error.message
+        );
+
+      }
+
+    }
+
+
+    notificationButton.addEventListener(
+      "click",
+      enableNotifications
+    );
+
+
+    // ページ読み込み時にもService Workerを登録
+    window.addEventListener(
+      "load",
+      async () => {
+
+        try {
+
+          await registerServiceWorker();
+
+          if (
+            "Notification" in window &&
+            Notification.permission === "granted"
+          ) {
+
+            notificationButton.textContent =
+              "通知 ON";
+
+            notificationButton.classList.add(
+              "enabled"
+            );
+
+            notificationStatus.textContent =
+              "通知は許可されています。";
+
+          }
+
+        } catch (error) {
+
+          console.error(
+            "Service Worker registration failed:",
+            error
+          );
+
+        }
+
+      }
+    );
+  </script>
 
 </body>
 </html>
