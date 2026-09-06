@@ -1,0 +1,10 @@
+{
+  "name": "株の羅針盤",
+  "short_name": "株の羅針盤",
+  "description": "日本株の監視・IR・株価アラート",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#ffffff"
+}
