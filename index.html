@@ -326,6 +326,87 @@
       margin-bottom: 5px;
     }
 
+    .ir-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .ir-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      padding: 15px;
+      box-shadow: 0 5px 18px rgba(17, 38, 70, .05);
+    }
+
+    .ir-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .ir-score {
+      font-size: 22px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .ir-company {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .ir-title {
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .ir-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .ir-reasons {
+      margin-top: 10px;
+      padding: 10px 11px;
+      border-radius: 12px;
+      background: #f6f8fc;
+      color: #41506a;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .ir-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 11px;
+    }
+
+    .ir-actions .btn {
+      flex: 1;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .score-positive { color: #15803d; }
+    .score-neutral { color: #475569; }
+    .score-negative { color: #b91c1c; }
+
+    .loading-card {
+      text-align: center;
+      padding: 20px 10px;
+      color: var(--muted);
+    }
+
     .bottom-nav {
       position: fixed;
       z-index: 100;
@@ -426,20 +507,30 @@
       <div class="eyebrow">KABU NO RASHINBAN</div>
       <h2>📊 今日のIR評価</h2>
       <p>
-        適時開示を100点基準で整理。
-        まずは現在の分析ダッシュボードへ接続し、
-        次の段階でこの画面へ直接表示します。
+        本日の適時開示をPWA内で速報評価します。
+        上方修正・還元・M&amp;A・希薄化などをタイトル中心に判定します。
       </p>
     </section>
 
     <div class="card">
-      <h3>今日のIRを確認</h3>
-      <p>
-        現在のIR評価・決算評価は既存Dashboardで確認できます。
-      </p>
-      <button class="btn btn-primary wide" onclick="openDashboard()">
-        📊 IR評価Dashboardを開く
-      </button>
+      <div class="section-title" style="margin:0">
+        <div>
+          <h3 style="margin:0">本日のIR</h3>
+          <p style="margin-top:5px">
+            速報評価です。決算数値の精密採点は既存Dashboard版が上位です。
+          </p>
+        </div>
+        <button
+          id="todayIrRefreshButton"
+          class="btn btn-soft"
+          onclick="loadTodayIr()"
+        >
+          更新
+        </button>
+      </div>
+
+      <div id="todayIrStatus" class="status"></div>
+      <div id="todayIrList" class="ir-list"></div>
     </div>
 
     <div class="card">
@@ -462,6 +553,14 @@
           <div class="value">⚪ 中立</div>
         </div>
       </div>
+
+      <button
+        class="btn btn-soft wide"
+        style="margin-top:12px"
+        onclick="openDashboard()"
+      >
+        精密採点Dashboardを開く
+      </button>
     </div>
   </main>
 
@@ -469,32 +568,43 @@
   <main id="page-search" class="page">
     <div class="section-title">
       <h2>🔎 過去IR採点</h2>
-      <span class="pill">100点評価</span>
+      <span class="pill">速報評価</span>
     </div>
 
     <div class="card">
-      <h3>銘柄を検索</h3>
+      <h3>銘柄コードで検索</h3>
       <p>
-        銘柄コードまたは銘柄名を入力して、過去IRを確認します。
+        4桁の銘柄コードを入力すると、過去IRをPWA内に直接表示します。
       </p>
 
       <div class="input-row">
         <input
           id="irSearchInput"
           type="text"
-          inputmode="search"
-          placeholder="例：7746 / 岡本硝子"
+          inputmode="text"
+          maxlength="4"
+          autocomplete="off"
+          placeholder="例：7746 / 285A"
         >
-        <button class="btn btn-primary" onclick="openPastIr()">
+        <button
+          id="irSearchButton"
+          class="btn btn-primary"
+          onclick="openPastIr()"
+        >
           検索
         </button>
       </div>
 
-      <div class="external-box">
-        <strong>現在の状態</strong>
-        過去IRの採点ロジックは既存Dashboardで稼働中です。
-        次の工程でCloudflare APIへ移し、この画面内に結果を直接表示します。
+      <div id="irSearchStatus" class="status"></div>
+    </div>
+
+    <div id="irHistoryResult" class="card" style="display:none">
+      <div class="section-title" style="margin:0">
+        <h3 id="irHistoryHeading" style="margin:0">過去IR</h3>
+        <span id="irHistoryCount" class="pill">0件</span>
       </div>
+
+      <div id="irHistoryList" class="ir-list"></div>
     </div>
   </main>
 
@@ -692,17 +802,249 @@
     window.open(DASHBOARD_URL, "_blank");
   }
 
-  function openPastIr() {
-    const query = document.getElementById("irSearchInput").value.trim();
+  function scoreClass(score) {
+    const value = Number(score);
 
-    if (!query) {
-      alert("銘柄コードまたは銘柄名を入力してください。");
+    if (value >= 58) {
+      return "score-positive";
+    }
+
+    if (value < 43) {
+      return "score-negative";
+    }
+
+    return "score-neutral";
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function safeHttpUrl(value) {
+    try {
+      const url = new URL(String(value || ""));
+
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        return url.href;
+      }
+
+      return "";
+    } catch {
+      return "";
+    }
+  }
+
+  function createIrCard(item, showCompany = true) {
+    const card = document.createElement("div");
+    card.className = "ir-card";
+
+    const score = Number(item.score ?? 50);
+    const reasons = Array.isArray(item.reasons)
+      ? item.reasons.join(" / ")
+      : "";
+
+    const types = Array.isArray(item.types)
+      ? item.types.join(" / ")
+      : "";
+
+    const documentUrl = safeHttpUrl(item.document_url);
+
+    card.innerHTML = `
+      <div class="ir-head">
+        <div style="min-width:0">
+          ${
+            showCompany
+              ? `<div class="ir-company">${escapeHtml(item.code)} ${escapeHtml(item.company)}</div>`
+              : ""
+          }
+          <p class="ir-title">${escapeHtml(item.title)}</p>
+        </div>
+
+        <div class="ir-score ${scoreClass(score)}">
+          ${escapeHtml(item.icon || "⚪")} ${score}点
+        </div>
+      </div>
+
+      <div class="ir-meta">
+        ${escapeHtml(item.label || "")}
+        ${types ? `｜${escapeHtml(types)}` : ""}
+        ｜信頼度：${escapeHtml(item.confidence || "低")}
+        ｜${escapeHtml(item.pubdate || "")}
+      </div>
+
+      ${
+        reasons
+          ? `<div class="ir-reasons"><strong>評価理由：</strong>${escapeHtml(reasons)}</div>`
+          : ""
+      }
+
+      <div class="ir-actions">
+        ${
+          documentUrl
+            ? `<a class="btn btn-soft" href="${escapeHtml(documentUrl)}" target="_blank" rel="noopener">TDnet資料</a>`
+            : ""
+        }
+      </div>
+    `;
+
+    return card;
+  }
+
+  async function loadTodayIr() {
+    const status = document.getElementById("todayIrStatus");
+    const list = document.getElementById("todayIrList");
+    const button = document.getElementById("todayIrRefreshButton");
+
+    status.textContent = "本日のIRを取得しています…";
+    list.innerHTML = '<div class="loading-card">読み込み中…</div>';
+    button.disabled = true;
+
+    try {
+      const response = await fetch(
+        WORKER_API + "/api/ir/today?limit=30",
+        {
+          method: "GET",
+          cache: "no-store"
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.error || "IR取得に失敗しました。"
+        );
+      }
+
+      list.innerHTML = "";
+
+      if (!Array.isArray(data.items) || data.items.length === 0) {
+        list.innerHTML =
+          '<div class="empty">本日の適時開示はまだありません。</div>';
+        status.textContent = "";
+        return;
+      }
+
+      data.items.forEach(item => {
+        list.appendChild(
+          createIrCard(item, true)
+        );
+      });
+
+      status.textContent =
+        `${data.count}件｜${data.mode_label || "速報評価"}`;
+
+    } catch (error) {
+      console.error(error);
+      list.innerHTML = "";
+      status.textContent =
+        "IR取得でエラーが発生しました：" + error.message;
+
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function openPastIr() {
+    const raw = document
+      .getElementById("irSearchInput")
+      .value
+      .trim()
+      .toUpperCase();
+
+    const code = raw.split(/\s+/)[0];
+
+    const status =
+      document.getElementById("irSearchStatus");
+
+    const result =
+      document.getElementById("irHistoryResult");
+
+    const list =
+      document.getElementById("irHistoryList");
+
+    const button =
+      document.getElementById("irSearchButton");
+
+    if (!/^[0-9A-Z]{4}$/.test(code)) {
+      status.textContent =
+        "4桁の銘柄コードを入力してください。例：7746 / 285A";
+      result.style.display = "none";
       return;
     }
 
-    // 現時点ではDashboardへ接続。
-    // 次工程でWorker APIへ移行する。
-    window.open(DASHBOARD_URL, "_blank");
+    status.textContent =
+      "過去IRを取得しています…";
+
+    result.style.display = "none";
+    button.disabled = true;
+    button.textContent = "取得中…";
+
+    try {
+      const response = await fetch(
+        WORKER_API
+        + "/api/ir/history?code="
+        + encodeURIComponent(code)
+        + "&limit=10",
+        {
+          method: "GET",
+          cache: "no-store"
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.error || "過去IRの取得に失敗しました。"
+        );
+      }
+
+      list.innerHTML = "";
+
+      document.getElementById(
+        "irHistoryHeading"
+      ).textContent =
+        "🔎 " + code + "｜過去IR";
+
+      document.getElementById(
+        "irHistoryCount"
+      ).textContent =
+        (data.count || 0) + "件";
+
+      if (!Array.isArray(data.items) || data.items.length === 0) {
+        list.innerHTML =
+          '<div class="empty">過去IRが見つかりませんでした。</div>';
+      } else {
+        data.items.forEach(item => {
+          list.appendChild(
+            createIrCard(item, false)
+          );
+        });
+      }
+
+      status.textContent =
+        data.mode_label || "速報評価（タイトル中心）";
+
+      result.style.display = "block";
+
+    } catch (error) {
+      console.error(error);
+
+      status.textContent =
+        "IR取得でエラーが発生しました：" + error.message;
+
+      result.style.display = "none";
+
+    } finally {
+      button.disabled = false;
+      button.textContent = "検索";
+    }
   }
 
   let currentPtsSourceUrl = "";
@@ -1144,12 +1486,23 @@
     async () => {
       renderWatchlist();
 
+      loadTodayIr();
+
       const ptsInput = document.getElementById("ptsInput");
 
       ptsInput.addEventListener("keydown", event => {
         if (event.key === "Enter") {
           event.preventDefault();
           openPts();
+        }
+      });
+
+      const irSearchInput = document.getElementById("irSearchInput");
+
+      irSearchInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          openPastIr();
         }
       });
 
