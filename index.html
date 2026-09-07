@@ -569,24 +569,68 @@
     <div class="card">
       <h3>夜間PTSを確認</h3>
       <p>
-        現在のPTS取得機能は既存Dashboardで稼働中です。
+        銘柄コードを入力すると、PWA内で直接PTS価格を取得します。
       </p>
 
       <div class="input-row">
         <input
           id="ptsInput"
           type="text"
+          inputmode="text"
+          maxlength="4"
           placeholder="例：7746 / 285A"
+          autocomplete="off"
         >
-        <button class="btn btn-primary" onclick="openPts()">
+        <button
+          id="ptsButton"
+          class="btn btn-primary"
+          onclick="openPts()"
+        >
           確認
         </button>
       </div>
 
-      <div class="notice" style="margin-top:12px">
-        次の工程で、PTS価格・東証終値比・更新時刻を
-        この画面に直接表示できるようにします。
+      <div id="ptsStatus" class="status"></div>
+    </div>
+
+    <div id="ptsResult" class="card" style="display:none">
+      <div class="section-title" style="margin-top:0">
+        <h2 id="ptsResultCode">PTS</h2>
+        <span id="ptsResultSource" class="pill">J-Market</span>
       </div>
+
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="label">夜間PTS</div>
+          <div id="ptsPrice" class="value">-</div>
+        </div>
+
+        <div class="metric">
+          <div class="label">東証終値比</div>
+          <div id="ptsChangePct" class="value">-</div>
+        </div>
+
+        <div class="metric">
+          <div class="label">値幅</div>
+          <div id="ptsChange" class="value">-</div>
+        </div>
+
+        <div class="metric">
+          <div class="label">東証価格</div>
+          <div id="ptsTsePrice" class="value">-</div>
+        </div>
+      </div>
+
+      <p id="ptsAsOf" style="margin-top:14px"></p>
+
+      <button
+        id="ptsSourceButton"
+        class="btn btn-soft wide"
+        style="margin-top:10px"
+        onclick="openPtsSource()"
+      >
+        詳細を確認
+      </button>
     </div>
   </main>
 
@@ -618,6 +662,10 @@
   // 現在のStreamlit Dashboard
   const DASHBOARD_URL =
     "https://kabu-rashinban-dashboard.streamlit.app/";
+
+  // PWAから直接呼ぶCloudflare Worker API
+  const WORKER_API =
+    "https://kabu-rashinban-alerts.kinako611216.workers.dev";
 
   // 既存のWeb Push公開鍵
   const VAPID_PUBLIC_KEY =
@@ -657,15 +705,145 @@
     window.open(DASHBOARD_URL, "_blank");
   }
 
-  function openPts() {
-    const query = document.getElementById("ptsInput").value.trim();
+  let currentPtsSourceUrl = "";
 
-    if (!query) {
-      alert("銘柄コードまたは銘柄名を入力してください。");
+  function yen(value) {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+      return "-";
+    }
+
+    const number = Number(value);
+
+    return new Intl.NumberFormat(
+      "ja-JP",
+      {
+        maximumFractionDigits: 1
+      }
+    ).format(number) + "円";
+  }
+
+  function signedYen(value) {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+      return "-";
+    }
+
+    const number = Number(value);
+    const sign = number > 0 ? "+" : "";
+
+    return sign
+      + new Intl.NumberFormat(
+          "ja-JP",
+          {
+            maximumFractionDigits: 1
+          }
+        ).format(number)
+      + "円";
+  }
+
+  function signedPct(value) {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+      return "-";
+    }
+
+    const number = Number(value);
+    const sign = number > 0 ? "+" : "";
+
+    return sign + number.toFixed(2) + "%";
+  }
+
+  async function openPts() {
+    const raw = document.getElementById("ptsInput").value.trim().toUpperCase();
+    const code = raw.split(/\s+/)[0];
+
+    const status = document.getElementById("ptsStatus");
+    const result = document.getElementById("ptsResult");
+    const button = document.getElementById("ptsButton");
+
+    if (!/^[0-9A-Z]{4}$/.test(code)) {
+      status.textContent = "4桁の銘柄コードを入力してください。例：7746 / 285A";
+      result.style.display = "none";
       return;
     }
 
-    window.open(DASHBOARD_URL, "_blank");
+    status.textContent = "PTSを取得しています…";
+    result.style.display = "none";
+    button.disabled = true;
+    button.textContent = "取得中…";
+
+    try {
+      const response = await fetch(
+        WORKER_API + "/api/pts?code=" + encodeURIComponent(code),
+        {
+          method: "GET",
+          cache: "no-store"
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.error || "PTSの取得に失敗しました。"
+        );
+      }
+
+      if (!data.available) {
+        status.textContent =
+          "現在、夜間PTSの取引値を取得できません。未約定・時間外などの可能性があります。";
+        return;
+      }
+
+      document.getElementById("ptsResultCode").textContent =
+        "🌙 " + data.code;
+
+      document.getElementById("ptsPrice").textContent =
+        yen(data.price);
+
+      document.getElementById("ptsChangePct").textContent =
+        signedPct(data.change_pct);
+
+      document.getElementById("ptsChange").textContent =
+        signedYen(data.change);
+
+      document.getElementById("ptsTsePrice").textContent =
+        yen(data.tse_price);
+
+      document.getElementById("ptsAsOf").textContent =
+        "更新：" + (data.asof || "-");
+
+      document.getElementById("ptsResultSource").textContent =
+        data.source || "J-Market";
+
+      currentPtsSourceUrl =
+        data.source_url || "";
+
+      status.textContent = "";
+      result.style.display = "block";
+
+    } catch (error) {
+      console.error(error);
+
+      status.textContent =
+        "PTS取得でエラーが発生しました：" + error.message;
+
+      result.style.display = "none";
+
+    } finally {
+      button.disabled = false;
+      button.textContent = "確認";
+    }
+  }
+
+  function openPtsSource() {
+    if (!currentPtsSourceUrl) {
+      alert("詳細ページがありません。");
+      return;
+    }
+
+    window.open(
+      currentPtsSourceUrl,
+      "_blank"
+    );
   }
 
   function loadWatchlist() {
@@ -965,6 +1143,15 @@
     "load",
     async () => {
       renderWatchlist();
+
+      const ptsInput = document.getElementById("ptsInput");
+
+      ptsInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          openPts();
+        }
+      });
 
       try {
         const registration =
