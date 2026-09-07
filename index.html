@@ -2,163 +2,1014 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>株の羅針盤</title>
+
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-  <meta name="theme-color" content="#f5f7fa">
+
+  <meta name="theme-color" content="#0b1f3a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="株の羅針盤">
+
   <style>
-    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; background:#f5f7fa; color:#1f2937; }
-    main { max-width:800px; margin:auto; padding:32px 20px; }
-    .card { background:white; border-radius:16px; padding:24px; margin-top:20px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
-    h1 { margin-bottom:8px; }
-    .sub { color:#6b7280; }
-    button { border:0; border-radius:10px; padding:12px 18px; font-size:16px; cursor:pointer; }
-    .notification { background:#2563eb; color:white; }
-    .notification.enabled { background:#16a34a; }
-    input, textarea { box-sizing:border-box; width:100%; padding:12px; margin:8px 0; border:1px solid #d1d5db; border-radius:10px; font-size:16px; }
-    textarea { min-height:160px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
-    #notificationStatus { margin-top:14px; color:#6b7280; font-size:14px; }
-    #subscriptionBox { display:none; margin-top:18px; }
-    .copy { background:#e5e7eb; color:#111827; }
+    :root {
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #728097;
+      --line: #e5eaf2;
+      --navy: #0b1f3a;
+      --blue: #2563eb;
+      --blue2: #0ea5e9;
+      --green: #16a34a;
+      --red: #dc2626;
+      --gold: #d6a72f;
+      --shadow: 0 8px 28px rgba(17, 38, 70, .08);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding:
+        calc(12px + env(safe-area-inset-top))
+        16px
+        14px;
+      background:
+        linear-gradient(135deg, rgba(11,31,58,.98), rgba(21,76,135,.98));
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(11,31,58,.16);
+    }
+
+    .brand {
+      max-width: 880px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand img {
+      width: 48px;
+      height: 48px;
+      border-radius: 13px;
+      object-fit: cover;
+      box-shadow: 0 4px 14px rgba(0,0,0,.2);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: .02em;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      font-size: 12px;
+      opacity: .8;
+    }
+
+    .page {
+      display: none;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 18px 14px 28px;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .hero {
+      border-radius: 24px;
+      padding: 22px;
+      color: #fff;
+      background:
+        radial-gradient(circle at top right, rgba(59,130,246,.35), transparent 35%),
+        linear-gradient(135deg, #0b1f3a, #123b68);
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .hero .eyebrow {
+      font-size: 12px;
+      opacity: .76;
+      margin-bottom: 7px;
+    }
+
+    .hero h2 {
+      margin: 0 0 8px;
+      font-size: 25px;
+    }
+
+    .hero p {
+      margin: 0;
+      line-height: 1.6;
+      font-size: 14px;
+      opacity: .9;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin: 14px 0;
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .card p {
+      margin: 6px 0;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 20px 2px 8px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: #eaf2ff;
+      color: #1e5dc7;
+      font-weight: 700;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    input {
+      min-width: 0;
+      width: 100%;
+      border: 1px solid #d8dfeb;
+      background: #f9fbfe;
+      color: var(--text);
+      border-radius: 13px;
+      padding: 13px 14px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #75a8ff;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 13px;
+      padding: 13px 15px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), #1e7cf2);
+      color: #fff;
+    }
+
+    .btn-soft {
+      background: #edf3fb;
+      color: #21456f;
+    }
+
+    .btn-green {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: #fff0f0;
+      color: var(--red);
+      border: 1px solid #ffd5d5;
+    }
+
+    .wide {
+      width: 100%;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .notice {
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: #edf6ff;
+      border: 1px solid #d5eaff;
+      color: #275d94;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .watch-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .watch-item:last-child {
+      border-bottom: 0;
+    }
+
+    .watch-main {
+      min-width: 0;
+    }
+
+    .watch-code {
+      font-weight: 800;
+      font-size: 17px;
+    }
+
+    .watch-name {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 22px 8px;
+      color: var(--muted);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      background: #f7f9fd;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric .value {
+      margin-top: 5px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .external-box {
+      padding: 15px;
+      border: 1px dashed #c6d2e3;
+      background: #fafcff;
+      border-radius: 15px;
+      margin-top: 12px;
+    }
+
+    .external-box strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding:
+        8px
+        max(10px, env(safe-area-inset-right))
+        calc(8px + env(safe-area-inset-bottom))
+        max(10px, env(safe-area-inset-left));
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(210,218,230,.9);
+    }
+
+    .nav-inner {
+      max-width: 880px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+    }
+
+    .nav-btn {
+      border: 0;
+      background: transparent;
+      color: #7a8799;
+      border-radius: 13px;
+      padding: 7px 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .nav-btn .icon {
+      display: block;
+      font-size: 21px;
+      margin-bottom: 2px;
+    }
+
+    .nav-btn.active {
+      color: var(--blue);
+      background: #edf4ff;
+    }
+
+    .tech-details {
+      margin-top: 14px;
+    }
+
+    .tech-details summary {
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      margin-top: 8px;
+      border: 1px solid #d8dfeb;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 11px;
+      background: #f7f9fc;
+    }
+
+    @media (max-width: 560px) {
+      .input-row {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
+
 <body>
-<main>
-  <h1>🧭 株の羅針盤</h1>
-  <div class="sub">日本株の監視・IR・株価アラート</div>
-
-  <div class="card">
-    <h2>🔔 プッシュ通知</h2>
-    <p>監視銘柄の株価到達や新着IRを通知します。</p>
-    <button class="notification" id="notificationButton">通知を受け取る</button>
-    <div id="notificationStatus"></div>
-    <div style="margin-top:8px;color:#9ca3af;font-size:12px;">Push版 v2</div>
-    <div id="subscriptionBox">
-      <p><strong>通知先データ</strong><br>次の設定で1回だけ使います。公開しないでください。</p>
-      <textarea id="subscriptionText" readonly></textarea>
-      <button class="copy" id="copySubscription">コピー</button>
+  <header class="app-header">
+    <div class="brand">
+      <img src="./icon-192.png" alt="株の羅針盤">
+      <div>
+        <h1>株の羅針盤</h1>
+        <p>日本株のIR評価・監視・夜間PTS</p>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <div class="card">
-    <h2>＋ 監視銘柄を追加</h2>
-    <input type="text" placeholder="銘柄コード または 銘柄名">
-    <button>監視銘柄に追加</button>
-  </div>
+  <!-- IR評価 -->
+  <main id="page-ir" class="page active">
+    <section class="hero">
+      <div class="eyebrow">KABU NO RASHINBAN</div>
+      <h2>📊 今日のIR評価</h2>
+      <p>
+        適時開示を100点基準で整理。
+        まずは現在の分析ダッシュボードへ接続し、
+        次の段階でこの画面へ直接表示します。
+      </p>
+    </section>
 
-  <div class="card">
-    <h2>👀 監視銘柄</h2>
-    <p>ここに登録した銘柄が表示されます。</p>
-  </div>
-</main>
+    <div class="card">
+      <h3>今日のIRを確認</h3>
+      <p>
+        現在のIR評価・決算評価は既存Dashboardで確認できます。
+      </p>
+      <button class="btn btn-primary wide" onclick="openDashboard()">
+        📊 IR評価Dashboardを開く
+      </button>
+    </div>
+
+    <div class="card">
+      <h3>採点基準</h3>
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="label">85〜100</div>
+          <div class="value">🔥 非常に強い</div>
+        </div>
+        <div class="metric">
+          <div class="label">70〜84</div>
+          <div class="value">⭐ 強い</div>
+        </div>
+        <div class="metric">
+          <div class="label">58〜69</div>
+          <div class="value">🟢 ややポジ</div>
+        </div>
+        <div class="metric">
+          <div class="label">43〜57</div>
+          <div class="value">⚪ 中立</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- IR検索 -->
+  <main id="page-search" class="page">
+    <div class="section-title">
+      <h2>🔎 過去IR採点</h2>
+      <span class="pill">100点評価</span>
+    </div>
+
+    <div class="card">
+      <h3>銘柄を検索</h3>
+      <p>
+        銘柄コードまたは銘柄名を入力して、過去IRを確認します。
+      </p>
+
+      <div class="input-row">
+        <input
+          id="irSearchInput"
+          type="text"
+          inputmode="search"
+          placeholder="例：7746 / 岡本硝子"
+        >
+        <button class="btn btn-primary" onclick="openPastIr()">
+          検索
+        </button>
+      </div>
+
+      <div class="external-box">
+        <strong>現在の状態</strong>
+        過去IRの採点ロジックは既存Dashboardで稼働中です。
+        次の工程でCloudflare APIへ移し、この画面内に結果を直接表示します。
+      </div>
+    </div>
+  </main>
+
+  <!-- 監視 -->
+  <main id="page-watch" class="page">
+    <div class="section-title">
+      <h2>👀 監視銘柄</h2>
+      <span id="watchCount" class="pill">0銘柄</span>
+    </div>
+
+    <div class="card">
+      <h3>＋ 監視銘柄を追加</h3>
+      <p>
+        この端末専用の監視リストです。
+        他の人の端末とは混ざりません。
+      </p>
+
+      <div class="input-row">
+        <input
+          id="watchInput"
+          type="text"
+          placeholder="例：7746 岡本硝子"
+        >
+        <button class="btn btn-primary" onclick="addWatchItem()">
+          追加
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>登録中</h3>
+      <div id="watchList"></div>
+    </div>
+
+    <div class="card">
+      <h3>🔔 プッシュ通知</h3>
+      <p>
+        iPhone / iPadではホーム画面からこのアプリを開いて通知を有効にしてください。
+      </p>
+
+      <button
+        class="btn btn-primary wide"
+        id="notificationButton"
+        onclick="enableNotifications()"
+      >
+        通知を受け取る
+      </button>
+
+      <div id="notificationStatus" class="status"></div>
+
+      <details class="tech-details">
+        <summary>通知登録データを表示</summary>
+        <textarea id="subscriptionText" readonly></textarea>
+        <button
+          class="btn btn-soft wide"
+          style="margin-top:8px"
+          onclick="copySubscription()"
+        >
+          コピー
+        </button>
+      </details>
+    </div>
+  </main>
+
+  <!-- PTS -->
+  <main id="page-pts" class="page">
+    <div class="section-title">
+      <h2>🌙 夜間PTS</h2>
+      <span class="pill">J-Market</span>
+    </div>
+
+    <div class="card">
+      <h3>夜間PTSを確認</h3>
+      <p>
+        現在のPTS取得機能は既存Dashboardで稼働中です。
+      </p>
+
+      <div class="input-row">
+        <input
+          id="ptsInput"
+          type="text"
+          placeholder="例：7746 / 285A"
+        >
+        <button class="btn btn-primary" onclick="openPts()">
+          確認
+        </button>
+      </div>
+
+      <div class="notice" style="margin-top:12px">
+        次の工程で、PTS価格・東証終値比・更新時刻を
+        この画面に直接表示できるようにします。
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <div class="nav-inner">
+      <button class="nav-btn active" data-page="ir" onclick="showPage('ir', this)">
+        <span class="icon">📊</span>
+        IR評価
+      </button>
+
+      <button class="nav-btn" data-page="search" onclick="showPage('search', this)">
+        <span class="icon">🔎</span>
+        IR検索
+      </button>
+
+      <button class="nav-btn" data-page="watch" onclick="showPage('watch', this)">
+        <span class="icon">👀</span>
+        監視
+      </button>
+
+      <button class="nav-btn" data-page="pts" onclick="showPage('pts', this)">
+        <span class="icon">🌙</span>
+        PTS
+      </button>
+    </div>
+  </nav>
 
 <script>
-const VAPID_PUBLIC_KEY = "BFHwW4fAJK_n6KbbnGKY-ozxPGcZFl6A413YbtoIcFl35Rxw8jomywghvSZyOhR17hLvEU4fzCrS_21dF-yHA68";
-const notificationButton = document.getElementById("notificationButton");
-const notificationStatus = document.getElementById("notificationStatus");
-const subscriptionBox = document.getElementById("subscriptionBox");
-const subscriptionText = document.getElementById("subscriptionText");
-const copySubscription = document.getElementById("copySubscription");
+  // 現在のStreamlit Dashboard
+  const DASHBOARD_URL =
+    "https://kabu-rashinban-dashboard.streamlit.app/";
 
-function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
-}
+  // 既存のWeb Push公開鍵
+  const VAPID_PUBLIC_KEY =
+    "BFHwW4fAJK_n6KbbnGKY-ozxPGcZFl6A413YbtoIcFl35Rxw8jomywghvSZyOhR17hLvEU4fzCrS_21dF-yHA68";
 
-function isStandalone() {
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-}
+  const WATCHLIST_KEY = "kabu-rashinban-device-watchlist-v1";
 
-function isIOS() {
-  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
-
-async function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) throw new Error("Service Worker非対応です");
-  return await navigator.serviceWorker.register("./sw.js");
-}
-
-function showSubscription(subscription) {
-  subscriptionText.value = JSON.stringify(subscription.toJSON());
-  subscriptionBox.style.display = "block";
-}
-
-async function enableNotifications() {
-  try {
-    if (!("Notification" in window) || !("PushManager" in window)) {
-      alert("この端末ではWeb Pushを利用できません。");
-      return;
-    }
-    if (isIOS() && !isStandalone()) {
-      alert("iPhone / iPadではSafariの共有ボタンから『ホーム画面に追加』し、ホーム画面の『株の羅針盤』から開いてください。");
-      return;
-    }
-
-    notificationStatus.textContent = "通知を登録しています…";
-    const registration = await registerServiceWorker();
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      notificationStatus.textContent = "通知が許可されていません。";
-      return;
-    }
-
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-    }
-
-    notificationButton.textContent = "通知 ON";
-    notificationButton.classList.add("enabled");
-    notificationStatus.textContent = "Web Pushの登録ができました。";
-    showSubscription(subscription);
-
-    await registration.showNotification("🧭 株の羅針盤", {
-      body: "本物のプッシュ通知を受け取る準備ができました。",
-      tag: "kabu-rashinban-push-ready",
-      data: { url: "./" }
+  function showPage(name, button) {
+    document.querySelectorAll(".page").forEach(page => {
+      page.classList.remove("active");
     });
-  } catch (error) {
-    console.error(error);
-    notificationStatus.textContent = "通知設定でエラーが発生しました。";
-    alert("通知設定でエラーが発生しました。\n" + error.message);
-  }
-}
 
-notificationButton.addEventListener("click", enableNotifications);
-copySubscription.addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(subscriptionText.value);
-    copySubscription.textContent = "コピー済み";
-  } catch {
-    subscriptionText.focus();
-    subscriptionText.select();
-  }
-});
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.classList.remove("active");
+    });
 
-window.addEventListener("load", async () => {
-  try {
-    const registration = await registerServiceWorker();
-    const subscription = await registration.pushManager.getSubscription();
-    if (subscription) {
-      notificationButton.textContent = "通知 ON";
-      notificationButton.classList.add("enabled");
-      notificationStatus.textContent = "Web Pushは登録済みです。";
-      showSubscription(subscription);
-    } else if ("Notification" in window && Notification.permission === "granted") {
-      notificationStatus.textContent = "通知許可済みです。ボタンを押してWeb Pushを登録してください。";
+    document.getElementById("page-" + name).classList.add("active");
+    button.classList.add("active");
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function openDashboard() {
+    window.open(DASHBOARD_URL, "_blank");
+  }
+
+  function openPastIr() {
+    const query = document.getElementById("irSearchInput").value.trim();
+
+    if (!query) {
+      alert("銘柄コードまたは銘柄名を入力してください。");
+      return;
     }
-  } catch (e) { console.error(e); }
-});
+
+    // 現時点ではDashboardへ接続。
+    // 次工程でWorker APIへ移行する。
+    window.open(DASHBOARD_URL, "_blank");
+  }
+
+  function openPts() {
+    const query = document.getElementById("ptsInput").value.trim();
+
+    if (!query) {
+      alert("銘柄コードまたは銘柄名を入力してください。");
+      return;
+    }
+
+    window.open(DASHBOARD_URL, "_blank");
+  }
+
+  function loadWatchlist() {
+    try {
+      const raw = localStorage.getItem(WATCHLIST_KEY);
+
+      if (!raw) {
+        return [];
+      }
+
+      const parsed = JSON.parse(raw);
+
+      return Array.isArray(parsed)
+        ? parsed
+        : [];
+
+    } catch {
+      return [];
+    }
+  }
+
+  function saveWatchlist(items) {
+    localStorage.setItem(
+      WATCHLIST_KEY,
+      JSON.stringify(items)
+    );
+  }
+
+  function normalizeWatchValue(value) {
+    return value
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
+  function addWatchItem() {
+    const input = document.getElementById("watchInput");
+    const value = normalizeWatchValue(input.value);
+
+    if (!value) {
+      alert("銘柄コードまたは銘柄名を入力してください。");
+      return;
+    }
+
+    const items = loadWatchlist();
+
+    const exists = items.some(item =>
+      item.toLowerCase() === value.toLowerCase()
+    );
+
+    if (exists) {
+      alert("すでに監視銘柄に入っています。");
+      return;
+    }
+
+    items.push(value);
+    saveWatchlist(items);
+
+    input.value = "";
+    renderWatchlist();
+  }
+
+  function removeWatchItem(index) {
+    const items = loadWatchlist();
+    items.splice(index, 1);
+
+    saveWatchlist(items);
+    renderWatchlist();
+  }
+
+  function renderWatchlist() {
+    const items = loadWatchlist();
+    const list = document.getElementById("watchList");
+    const count = document.getElementById("watchCount");
+
+    count.textContent =
+      items.length + "銘柄";
+
+    list.innerHTML = "";
+
+    if (!items.length) {
+      list.innerHTML =
+        '<div class="empty">まだ監視銘柄はありません。</div>';
+      return;
+    }
+
+    items.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "watch-item";
+
+      const main = document.createElement("div");
+      main.className = "watch-main";
+
+      const code = document.createElement("div");
+      code.className = "watch-code";
+      code.textContent = item;
+
+      const sub = document.createElement("div");
+      sub.className = "watch-name";
+      sub.textContent = "この端末に保存されています";
+
+      const del = document.createElement("button");
+      del.className = "btn btn-danger";
+      del.textContent = "削除";
+      del.onclick = () => removeWatchItem(index);
+
+      main.appendChild(code);
+      main.appendChild(sub);
+
+      row.appendChild(main);
+      row.appendChild(del);
+
+      list.appendChild(row);
+    });
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding =
+      "=".repeat(
+        (4 - base64String.length % 4) % 4
+      );
+
+    const base64 =
+      (base64String + padding)
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+    const rawData = atob(base64);
+
+    return Uint8Array.from(
+      [...rawData].map(
+        c => c.charCodeAt(0)
+      )
+    );
+  }
+
+  function isStandalone() {
+    return (
+      window.matchMedia(
+        "(display-mode: standalone)"
+      ).matches
+      ||
+      window.navigator.standalone === true
+    );
+  }
+
+  function isIOS() {
+    return /iPhone|iPad|iPod/i.test(
+      navigator.userAgent
+    );
+  }
+
+  async function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) {
+      throw new Error(
+        "Service Worker非対応です"
+      );
+    }
+
+    return await navigator.serviceWorker.register(
+      "./sw.js"
+    );
+  }
+
+  async function enableNotifications() {
+    const button =
+      document.getElementById(
+        "notificationButton"
+      );
+
+    const status =
+      document.getElementById(
+        "notificationStatus"
+      );
+
+    try {
+      if (
+        !("Notification" in window)
+        ||
+        !("PushManager" in window)
+      ) {
+        alert(
+          "この端末ではWeb Pushを利用できません。"
+        );
+        return;
+      }
+
+      if (
+        isIOS()
+        &&
+        !isStandalone()
+      ) {
+        alert(
+          "iPhone / iPadではSafariの共有ボタンから"
+          + "『ホーム画面に追加』し、"
+          + "ホーム画面の『株の羅針盤』から開いてください。"
+        );
+        return;
+      }
+
+      status.textContent =
+        "通知を登録しています…";
+
+      const registration =
+        await registerServiceWorker();
+
+      const permission =
+        await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        status.textContent =
+          "通知が許可されていません。";
+        return;
+      }
+
+      let subscription =
+        await registration
+          .pushManager
+          .getSubscription();
+
+      if (!subscription) {
+        subscription =
+          await registration
+            .pushManager
+            .subscribe({
+              userVisibleOnly: true,
+              applicationServerKey:
+                urlBase64ToUint8Array(
+                  VAPID_PUBLIC_KEY
+                )
+            });
+      }
+
+      button.textContent = "通知 ON";
+      button.classList.remove("btn-primary");
+      button.classList.add("btn-green");
+
+      status.textContent =
+        "Web Pushの登録ができました。";
+
+      document.getElementById(
+        "subscriptionText"
+      ).value =
+        JSON.stringify(
+          subscription.toJSON()
+        );
+
+      await registration.showNotification(
+        "🧭 株の羅針盤",
+        {
+          body:
+            "プッシュ通知を受け取る準備ができました。",
+          tag:
+            "kabu-rashinban-push-ready",
+          data: {
+            url: "./"
+          }
+        }
+      );
+
+    } catch (error) {
+      console.error(error);
+
+      status.textContent =
+        "通知設定でエラーが発生しました。";
+
+      alert(
+        "通知設定でエラーが発生しました。\n"
+        + error.message
+      );
+    }
+  }
+
+  async function copySubscription() {
+    const text =
+      document.getElementById(
+        "subscriptionText"
+      ).value;
+
+    if (!text) {
+      alert(
+        "まだ通知登録データがありません。"
+      );
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("コピーしました。");
+    } catch {
+      alert(
+        "コピーできませんでした。"
+      );
+    }
+  }
+
+  window.addEventListener(
+    "load",
+    async () => {
+      renderWatchlist();
+
+      try {
+        const registration =
+          await registerServiceWorker();
+
+        const subscription =
+          await registration
+            .pushManager
+            .getSubscription();
+
+        if (subscription) {
+          const button =
+            document.getElementById(
+              "notificationButton"
+            );
+
+          button.textContent =
+            "通知 ON";
+
+          button.classList.remove(
+            "btn-primary"
+          );
+
+          button.classList.add(
+            "btn-green"
+          );
+
+          document.getElementById(
+            "notificationStatus"
+          ).textContent =
+            "Web Pushは登録済みです。";
+
+          document.getElementById(
+            "subscriptionText"
+          ).value =
+            JSON.stringify(
+              subscription.toJSON()
+            );
+        }
+
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  );
 </script>
 </body>
 </html>
