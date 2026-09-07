@@ -1,10 +1,24 @@
 {
   "name": "株の羅針盤",
   "short_name": "株の羅針盤",
-  "description": "日本株の監視・IR・株価アラート",
+  "description": "日本株の監視・IR評価・株価アラート",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f4f6f8",
-  "theme_color": "#ffffff"
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
