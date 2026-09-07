@@ -168,8 +168,7 @@ async function fetchCompanyIr(code) {
 
 async function fetchStock(code) {
   const url =
-    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(code)}.T?range=5d&interval=5m&includePrePost=false`;
-
+  `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(code)}.T?range=1d&interval=1m&includePrePost=false`;
   const res = await fetch(url, {
     headers: {
       "User-Agent": "Mozilla/5.0",
