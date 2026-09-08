@@ -46,13 +46,9 @@
       padding-bottom: calc(92px + env(safe-area-inset-bottom));
     }
 
-    button, input {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { opacity: .6; cursor: default; }
 
     .app-header {
       position: sticky;
@@ -103,9 +99,7 @@
       padding: 18px 14px 28px;
     }
 
-    .page.active {
-      display: block;
-    }
+    .page.active { display: block; }
 
     .hero {
       border-radius: 24px;
@@ -161,6 +155,7 @@
       align-items: center;
       justify-content: space-between;
       margin: 20px 2px 8px;
+      gap: 10px;
     }
 
     .section-title h2 {
@@ -178,6 +173,12 @@
       background: #eaf2ff;
       color: #1e5dc7;
       font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill-precise {
+      background: #ecfdf3;
+      color: #15803d;
     }
 
     .input-row {
@@ -231,14 +232,13 @@
       border: 1px solid #ffd5d5;
     }
 
-    .wide {
-      width: 100%;
-    }
+    .wide { width: 100%; }
 
     .status {
       margin-top: 10px;
       font-size: 13px;
       color: var(--muted);
+      line-height: 1.55;
     }
 
     .notice {
@@ -251,6 +251,17 @@
       line-height: 1.55;
     }
 
+    .precise-notice {
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: #effcf4;
+      border: 1px solid #ccefd8;
+      color: #21653a;
+      font-size: 13px;
+      line-height: 1.55;
+      margin-top: 12px;
+    }
+
     .watch-item {
       display: flex;
       align-items: center;
@@ -260,13 +271,8 @@
       border-bottom: 1px solid var(--line);
     }
 
-    .watch-item:last-child {
-      border-bottom: 0;
-    }
-
-    .watch-main {
-      min-width: 0;
-    }
+    .watch-item:last-child { border-bottom: 0; }
+    .watch-main { min-width: 0; }
 
     .watch-code {
       font-weight: 800;
@@ -311,19 +317,6 @@
       margin-top: 5px;
       font-size: 20px;
       font-weight: 800;
-    }
-
-    .external-box {
-      padding: 15px;
-      border: 1px dashed #c6d2e3;
-      background: #fafcff;
-      border-radius: 15px;
-      margin-top: 12px;
-    }
-
-    .external-box strong {
-      display: block;
-      margin-bottom: 5px;
     }
 
     .ir-list {
@@ -371,17 +364,32 @@
       color: var(--muted);
       font-size: 12px;
       margin-top: 8px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
-    .ir-reasons {
+    .ir-reasons,
+    .ir-facts,
+    .ir-breakdown {
       margin-top: 10px;
       padding: 10px 11px;
       border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .ir-reasons {
       background: #f6f8fc;
       color: #41506a;
-      font-size: 12px;
-      line-height: 1.55;
+    }
+
+    .ir-facts {
+      background: #f1f8ff;
+      color: #315b82;
+    }
+
+    .ir-breakdown {
+      background: #f1fbf4;
+      color: #2f6b40;
     }
 
     .ir-actions {
@@ -453,9 +461,7 @@
       background: #edf4ff;
     }
 
-    .tech-details {
-      margin-top: 14px;
-    }
+    .tech-details { margin-top: 14px; }
 
     .tech-details summary {
       color: var(--muted);
@@ -475,17 +481,11 @@
     }
 
     @media (max-width: 560px) {
-      .input-row {
-        flex-direction: column;
-      }
-
-      .btn {
-        width: 100%;
-      }
-
-      .metric-grid {
-        grid-template-columns: 1fr;
-      }
+      .input-row { flex-direction: column; }
+      .btn { width: 100%; }
+      .metric-grid { grid-template-columns: 1fr; }
+      .ir-head { flex-direction: column; }
+      .ir-score { font-size: 20px; }
     }
   </style>
 </head>
@@ -496,7 +496,7 @@
       <img src="./icon-192.png" alt="株の羅針盤">
       <div>
         <h1>株の羅針盤</h1>
-        <p>日本株のIR評価・監視・夜間PTS</p>
+        <p>日本株の精密IR評価・監視・夜間PTS</p>
       </div>
     </div>
   </header>
@@ -505,10 +505,10 @@
   <main id="page-ir" class="page active">
     <section class="hero">
       <div class="eyebrow">KABU NO RASHINBAN</div>
-      <h2>📊 今日のIR評価</h2>
+      <h2>📊 今日のIR精密評価</h2>
       <p>
-        本日の適時開示をPWA内で速報評価します。
-        上方修正・還元・M&amp;A・希薄化などをタイトル中心に判定します。
+        適時開示のPDF本文とタイトルを解析し、
+        決算数値・業績修正・還元・M&amp;A・希薄化などを精密採点します。
       </p>
     </section>
 
@@ -517,16 +517,20 @@
         <div>
           <h3 style="margin:0">本日のIR</h3>
           <p style="margin-top:5px">
-            速報評価です。決算数値の精密採点は既存Dashboard版が上位です。
+            GitHub ActionsでPDF本文を解析します。再採点には通常20〜40秒ほどかかります。
           </p>
         </div>
         <button
           id="todayIrRefreshButton"
           class="btn btn-soft"
-          onclick="loadTodayIr()"
+          onclick="loadTodayIr(true)"
         >
-          更新
+          再採点
         </button>
+      </div>
+
+      <div class="precise-notice">
+        ✅ 精密評価モード：PDF本文＋タイトル
       </div>
 
       <div id="todayIrStatus" class="status"></div>
@@ -559,7 +563,7 @@
         style="margin-top:12px"
         onclick="openDashboard()"
       >
-        精密採点Dashboardを開く
+        Streamlit版Dashboardを開く
       </button>
     </div>
   </main>
@@ -567,14 +571,15 @@
   <!-- IR検索 -->
   <main id="page-search" class="page">
     <div class="section-title">
-      <h2>🔎 過去IR採点</h2>
-      <span class="pill">速報評価</span>
+      <h2>🔎 過去IR精密採点</h2>
+      <span class="pill pill-precise">精密評価</span>
     </div>
 
     <div class="card">
       <h3>銘柄コードで検索</h3>
       <p>
-        4桁の銘柄コードを入力すると、過去IRをPWA内に直接表示します。
+        4桁の銘柄コードを入力すると、最新の過去IRをPDF本文まで解析して表示します。
+        検索時に精密採点を更新します。
       </p>
 
       <div class="input-row">
@@ -591,7 +596,7 @@
           class="btn btn-primary"
           onclick="openPastIr()"
         >
-          検索
+          精密検索
         </button>
       </div>
 
@@ -601,7 +606,7 @@
     <div id="irHistoryResult" class="card" style="display:none">
       <div class="section-title" style="margin:0">
         <h3 id="irHistoryHeading" style="margin:0">過去IR</h3>
-        <span id="irHistoryCount" class="pill">0件</span>
+        <span id="irHistoryCount" class="pill pill-precise">0件</span>
       </div>
 
       <div id="irHistoryList" class="ir-list"></div>
@@ -769,12 +774,16 @@
   </nav>
 
 <script>
-  // 現在のStreamlit Dashboard
+  // Streamlit Dashboard
   const DASHBOARD_URL =
     "https://kabu-rashinban-dashboard.streamlit.app/";
 
-  // PWAから直接呼ぶCloudflare Worker API
-  const WORKER_API =
+  // 精密IR専用API（PDF本文＋タイトル）
+  const IR_API =
+    "https://kabu-rashinban-ir-api.kinako611216.workers.dev";
+
+  // PTSは既存の監視Workerをそのまま利用
+  const PTS_API =
     "https://kabu-rashinban-alerts.kinako611216.workers.dev";
 
   // 既存のWeb Push公開鍵
@@ -782,6 +791,9 @@
     "BFHwW4fAJK_n6KbbnGKY-ozxPGcZFl6A413YbtoIcFl35Rxw8jomywghvSZyOhR17hLvEU4fzCrS_21dF-yHA68";
 
   const WATCHLIST_KEY = "kabu-rashinban-device-watchlist-v1";
+
+  const PRECISE_POLL_INTERVAL_MS = 3500;
+  const PRECISE_POLL_ATTEMPTS = 12;
 
   function showPage(name, button) {
     document.querySelectorAll(".page").forEach(page => {
@@ -805,14 +817,8 @@
   function scoreClass(score) {
     const value = Number(score);
 
-    if (value >= 58) {
-      return "score-positive";
-    }
-
-    if (value < 43) {
-      return "score-negative";
-    }
-
+    if (value >= 58) return "score-positive";
+    if (value < 43) return "score-negative";
     return "score-neutral";
   }
 
@@ -839,14 +845,109 @@
     }
   }
 
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function jstTodayString() {
+    const parts = new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }
+    ).formatToParts(new Date());
+
+    const map = {};
+    parts.forEach(part => {
+      map[part.type] = part.value;
+    });
+
+    return `${map.year}-${map.month}-${map.day}`;
+  }
+
+  function generatedDateString(value) {
+    const text = String(value || "");
+    return text.length >= 10 ? text.slice(0, 10) : "";
+  }
+
+  function formatGeneratedAt(value) {
+    if (!value) return "";
+
+    try {
+      return new Intl.DateTimeFormat(
+        "ja-JP",
+        {
+          timeZone: "Asia/Tokyo",
+          month: "numeric",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      ).format(new Date(value));
+    } catch {
+      return String(value);
+    }
+  }
+
+  async function fetchJson(url) {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+        cache: "no-store"
+      }
+    );
+
+    let data = null;
+
+    try {
+      data = await response.json();
+    } catch {
+      data = {
+        ok: false,
+        error: "APIの応答を読み取れませんでした。"
+      };
+    }
+
+    return { response, data };
+  }
+
+  function renderIrList(listElement, items, showCompany) {
+    listElement.innerHTML = "";
+
+    if (!Array.isArray(items) || items.length === 0) {
+      listElement.innerHTML =
+        '<div class="empty">該当するIRはありません。</div>';
+      return;
+    }
+
+    items.forEach(item => {
+      listElement.appendChild(
+        createIrCard(item, showCompany)
+      );
+    });
+  }
+
   function createIrCard(item, showCompany = true) {
     const card = document.createElement("div");
     card.className = "ir-card";
 
     const score = Number(item.score ?? 50);
+
     const reasons = Array.isArray(item.reasons)
-      ? item.reasons.join(" / ")
-      : "";
+      ? item.reasons
+      : [];
+
+    const facts = Array.isArray(item.facts)
+      ? item.facts
+      : [];
+
+    const breakdown = Array.isArray(item.breakdown)
+      ? item.breakdown
+      : [];
 
     const types = Array.isArray(item.types)
       ? item.types.join(" / ")
@@ -873,13 +974,26 @@
       <div class="ir-meta">
         ${escapeHtml(item.label || "")}
         ${types ? `｜${escapeHtml(types)}` : ""}
-        ｜信頼度：${escapeHtml(item.confidence || "低")}
+        ｜信頼度：${escapeHtml(item.confidence || "-")}
+        ｜${escapeHtml(item.source || "精密評価")}
         ｜${escapeHtml(item.pubdate || "")}
       </div>
 
       ${
-        reasons
-          ? `<div class="ir-reasons"><strong>評価理由：</strong>${escapeHtml(reasons)}</div>`
+        reasons.length
+          ? `<div class="ir-reasons"><strong>評価理由：</strong><br>${reasons.map(v => escapeHtml(v)).join("<br>")}</div>`
+          : ""
+      }
+
+      ${
+        facts.length
+          ? `<div class="ir-facts"><strong>確認数値・事実：</strong><br>${facts.map(v => escapeHtml(v)).join("<br>")}</div>`
+          : ""
+      }
+
+      ${
+        breakdown.length
+          ? `<div class="ir-breakdown"><strong>採点内訳：</strong><br>${breakdown.map(v => escapeHtml(v)).join("<br>")}</div>`
           : ""
       }
 
@@ -895,53 +1009,147 @@
     return card;
   }
 
-  async function loadTodayIr() {
+  async function waitForUpdatedPreciseResult(url, previousGeneratedAt) {
+    for (let attempt = 0; attempt < PRECISE_POLL_ATTEMPTS; attempt++) {
+      await sleep(PRECISE_POLL_INTERVAL_MS);
+
+      try {
+        const { response, data } = await fetchJson(url);
+
+        if (
+          response.ok
+          && data
+          && data.ok
+          && data.generated_at
+          && (
+            !previousGeneratedAt
+            || data.generated_at !== previousGeneratedAt
+          )
+        ) {
+          return data;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    return null;
+  }
+
+  async function loadTodayIr(forceRefresh = false) {
     const status = document.getElementById("todayIrStatus");
     const list = document.getElementById("todayIrList");
     const button = document.getElementById("todayIrRefreshButton");
 
-    status.textContent = "本日のIRを取得しています…";
-    list.innerHTML = '<div class="loading-card">読み込み中…</div>';
     button.disabled = true;
 
+    let previousGeneratedAt = "";
+    let currentData = null;
+
     try {
-      const response = await fetch(
-        WORKER_API + "/api/ir/today?limit=30",
-        {
-          method: "GET",
-          cache: "no-store"
-        }
+      status.textContent = "本日の精密IRを確認しています…";
+      list.innerHTML = '<div class="loading-card">読み込み中…</div>';
+
+      const currentResult = await fetchJson(
+        IR_API + "/api/ir/today?limit=30"
       );
 
-      const data = await response.json();
+      if (
+        currentResult.response.ok
+        && currentResult.data
+        && currentResult.data.ok
+      ) {
+        currentData = currentResult.data;
+        previousGeneratedAt = currentData.generated_at || "";
 
-      if (!response.ok || !data.ok) {
+        renderIrList(
+          list,
+          currentData.items,
+          true
+        );
+
+        const isToday =
+          generatedDateString(currentData.generated_at)
+          === jstTodayString();
+
+        if (!forceRefresh && isToday) {
+          status.textContent =
+            `${currentData.count || 0}件｜${currentData.mode_label || "精密評価"}`
+            + (
+              currentData.generated_at
+                ? `｜採点 ${formatGeneratedAt(currentData.generated_at)}`
+                : ""
+            );
+          return;
+        }
+      }
+
+      status.textContent =
+        currentData
+          ? "本日の精密採点を更新しています…（20〜40秒ほど）"
+          : "本日の精密採点を開始しています…（20〜40秒ほど）";
+
+      if (!currentData) {
+        list.innerHTML =
+          '<div class="loading-card">PDF本文を解析しています…</div>';
+      }
+
+      const refreshResult = await fetchJson(
+        IR_API + "/api/ir/today?refresh=1&limit=30"
+      );
+
+      if (
+        !refreshResult.data
+        || !refreshResult.data.ok
+      ) {
         throw new Error(
-          data.error || "IR取得に失敗しました。"
+          refreshResult.data?.error
+          || "本日の精密採点を開始できませんでした。"
         );
       }
 
-      list.innerHTML = "";
+      if (
+        Array.isArray(refreshResult.data.items)
+      ) {
+        renderIrList(
+          list,
+          refreshResult.data.items,
+          true
+        );
+      }
 
-      if (!Array.isArray(data.items) || data.items.length === 0) {
-        list.innerHTML =
-          '<div class="empty">本日の適時開示はまだありません。</div>';
-        status.textContent = "";
+      const updated = await waitForUpdatedPreciseResult(
+        IR_API + "/api/ir/today?limit=30",
+        previousGeneratedAt
+      );
+
+      if (updated) {
+        renderIrList(
+          list,
+          updated.items,
+          true
+        );
+
+        status.textContent =
+          `${updated.count || 0}件｜${updated.mode_label || "精密評価"}`
+          + (
+            updated.generated_at
+              ? `｜採点 ${formatGeneratedAt(updated.generated_at)}`
+              : ""
+          );
         return;
       }
 
-      data.items.forEach(item => {
-        list.appendChild(
-          createIrCard(item, true)
-        );
-      });
-
       status.textContent =
-        `${data.count}件｜${data.mode_label || "速報評価"}`;
+        "精密採点はまだ処理中です。少し待ってから「再採点」を押してください。";
 
     } catch (error) {
       console.error(error);
-      list.innerHTML = "";
+
+      if (!currentData) {
+        list.innerHTML = "";
+      }
+
       status.textContent =
         "IR取得でエラーが発生しました：" + error.message;
 
@@ -959,17 +1167,10 @@
 
     const code = raw.split(/\s+/)[0];
 
-    const status =
-      document.getElementById("irSearchStatus");
-
-    const result =
-      document.getElementById("irHistoryResult");
-
-    const list =
-      document.getElementById("irHistoryList");
-
-    const button =
-      document.getElementById("irSearchButton");
+    const status = document.getElementById("irSearchStatus");
+    const result = document.getElementById("irHistoryResult");
+    const list = document.getElementById("irHistoryList");
+    const button = document.getElementById("irSearchButton");
 
     if (!/^[0-9A-Z]{4}$/.test(code)) {
       status.textContent =
@@ -978,60 +1179,134 @@
       return;
     }
 
-    status.textContent =
-      "過去IRを取得しています…";
-
-    result.style.display = "none";
     button.disabled = true;
-    button.textContent = "取得中…";
+    button.textContent = "精密採点中…";
+    status.textContent =
+      "既存の精密採点結果を確認しています…";
+
+    let previousGeneratedAt = "";
+    let cachedData = null;
 
     try {
-      const response = await fetch(
-        WORKER_API
+      const currentUrl =
+        IR_API
         + "/api/ir/history?code="
         + encodeURIComponent(code)
-        + "&limit=10",
-        {
-          method: "GET",
-          cache: "no-store"
-        }
-      );
+        + "&limit=10";
 
-      const data = await response.json();
+      const currentResult =
+        await fetchJson(currentUrl);
 
-      if (!response.ok || !data.ok) {
-        throw new Error(
-          data.error || "過去IRの取得に失敗しました。"
+      if (
+        currentResult.response.ok
+        && currentResult.data
+        && currentResult.data.ok
+      ) {
+        cachedData = currentResult.data;
+        previousGeneratedAt =
+          cachedData.generated_at || "";
+
+        document.getElementById(
+          "irHistoryHeading"
+        ).textContent =
+          "🔎 " + code + "｜過去IR";
+
+        document.getElementById(
+          "irHistoryCount"
+        ).textContent =
+          (cachedData.count || 0) + "件";
+
+        renderIrList(
+          list,
+          cachedData.items,
+          false
         );
-      }
 
-      list.innerHTML = "";
-
-      document.getElementById(
-        "irHistoryHeading"
-      ).textContent =
-        "🔎 " + code + "｜過去IR";
-
-      document.getElementById(
-        "irHistoryCount"
-      ).textContent =
-        (data.count || 0) + "件";
-
-      if (!Array.isArray(data.items) || data.items.length === 0) {
-        list.innerHTML =
-          '<div class="empty">過去IRが見つかりませんでした。</div>';
-      } else {
-        data.items.forEach(item => {
-          list.appendChild(
-            createIrCard(item, false)
-          );
-        });
+        result.style.display = "block";
       }
 
       status.textContent =
-        data.mode_label || "速報評価（タイトル中心）";
+        "PDF本文を使って最新の精密採点を更新しています…（20〜40秒ほど）";
 
-      result.style.display = "block";
+      const refreshResult = await fetchJson(
+        IR_API
+        + "/api/ir/history?code="
+        + encodeURIComponent(code)
+        + "&refresh=1&limit=10"
+      );
+
+      if (
+        !refreshResult.data
+        || !refreshResult.data.ok
+      ) {
+        throw new Error(
+          refreshResult.data?.error
+          || "精密採点を開始できませんでした。"
+        );
+      }
+
+      if (Array.isArray(refreshResult.data.items)) {
+        document.getElementById(
+          "irHistoryHeading"
+        ).textContent =
+          "🔎 " + code + "｜過去IR";
+
+        document.getElementById(
+          "irHistoryCount"
+        ).textContent =
+          (refreshResult.data.count || 0) + "件";
+
+        renderIrList(
+          list,
+          refreshResult.data.items,
+          false
+        );
+
+        result.style.display = "block";
+      }
+
+      const updated = await waitForUpdatedPreciseResult(
+        currentUrl,
+        previousGeneratedAt
+      );
+
+      if (updated) {
+        document.getElementById(
+          "irHistoryHeading"
+        ).textContent =
+          "🔎 " + code + "｜過去IR";
+
+        document.getElementById(
+          "irHistoryCount"
+        ).textContent =
+          (updated.count || 0) + "件";
+
+        renderIrList(
+          list,
+          updated.items,
+          false
+        );
+
+        result.style.display = "block";
+
+        status.textContent =
+          `${updated.mode_label || "精密評価"}`
+          + (
+            updated.generated_at
+              ? `｜採点 ${formatGeneratedAt(updated.generated_at)}`
+              : ""
+          );
+
+        return;
+      }
+
+      if (cachedData) {
+        status.textContent =
+          "最新の精密採点はまだ処理中です。現在は直前の精密結果を表示しています。";
+      } else {
+        status.textContent =
+          "精密採点はまだ処理中です。少し待ってからもう一度「精密検索」を押してください。";
+      }
 
     } catch (error) {
       console.error(error);
@@ -1039,18 +1314,24 @@
       status.textContent =
         "IR取得でエラーが発生しました：" + error.message;
 
-      result.style.display = "none";
+      if (!cachedData) {
+        result.style.display = "none";
+      }
 
     } finally {
       button.disabled = false;
-      button.textContent = "検索";
+      button.textContent = "精密検索";
     }
   }
 
   let currentPtsSourceUrl = "";
 
   function yen(value) {
-    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+    if (
+      value === null
+      || value === undefined
+      || !Number.isFinite(Number(value))
+    ) {
       return "-";
     }
 
@@ -1058,14 +1339,16 @@
 
     return new Intl.NumberFormat(
       "ja-JP",
-      {
-        maximumFractionDigits: 1
-      }
+      { maximumFractionDigits: 1 }
     ).format(number) + "円";
   }
 
   function signedYen(value) {
-    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+    if (
+      value === null
+      || value === undefined
+      || !Number.isFinite(Number(value))
+    ) {
       return "-";
     }
 
@@ -1075,15 +1358,17 @@
     return sign
       + new Intl.NumberFormat(
           "ja-JP",
-          {
-            maximumFractionDigits: 1
-          }
+          { maximumFractionDigits: 1 }
         ).format(number)
       + "円";
   }
 
   function signedPct(value) {
-    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+    if (
+      value === null
+      || value === undefined
+      || !Number.isFinite(Number(value))
+    ) {
       return "-";
     }
 
@@ -1094,7 +1379,9 @@
   }
 
   async function openPts() {
-    const raw = document.getElementById("ptsInput").value.trim().toUpperCase();
+    const raw =
+      document.getElementById("ptsInput").value.trim().toUpperCase();
+
     const code = raw.split(/\s+/)[0];
 
     const status = document.getElementById("ptsStatus");
@@ -1102,7 +1389,8 @@
     const button = document.getElementById("ptsButton");
 
     if (!/^[0-9A-Z]{4}$/.test(code)) {
-      status.textContent = "4桁の銘柄コードを入力してください。例：7746 / 285A";
+      status.textContent =
+        "4桁の銘柄コードを入力してください。例：7746 / 285A";
       result.style.display = "none";
       return;
     }
@@ -1114,7 +1402,7 @@
 
     try {
       const response = await fetch(
-        WORKER_API + "/api/pts?code=" + encodeURIComponent(code),
+        PTS_API + "/api/pts?code=" + encodeURIComponent(code),
         {
           method: "GET",
           cache: "no-store"
@@ -1156,8 +1444,7 @@
       document.getElementById("ptsResultSource").textContent =
         data.source || "J-Market";
 
-      currentPtsSourceUrl =
-        data.source_url || "";
+      currentPtsSourceUrl = data.source_url || "";
 
       status.textContent = "";
       result.style.display = "block";
@@ -1182,26 +1469,20 @@
       return;
     }
 
-    window.open(
-      currentPtsSourceUrl,
-      "_blank"
-    );
+    window.open(currentPtsSourceUrl, "_blank");
   }
 
   function loadWatchlist() {
     try {
       const raw = localStorage.getItem(WATCHLIST_KEY);
 
-      if (!raw) {
-        return [];
-      }
+      if (!raw) return [];
 
       const parsed = JSON.parse(raw);
 
       return Array.isArray(parsed)
         ? parsed
         : [];
-
     } catch {
       return [];
     }
@@ -1260,9 +1541,7 @@
     const list = document.getElementById("watchList");
     const count = document.getElementById("watchCount");
 
-    count.textContent =
-      items.length + "銘柄";
-
+    count.textContent = items.length + "銘柄";
     list.innerHTML = "";
 
     if (!items.length) {
@@ -1323,9 +1602,7 @@
 
   function isStandalone() {
     return (
-      window.matchMedia(
-        "(display-mode: standalone)"
-      ).matches
+      window.matchMedia("(display-mode: standalone)").matches
       ||
       window.navigator.standalone === true
     );
@@ -1339,9 +1616,7 @@
 
   async function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) {
-      throw new Error(
-        "Service Worker非対応です"
-      );
+      throw new Error("Service Worker非対応です");
     }
 
     return await navigator.serviceWorker.register(
@@ -1351,14 +1626,10 @@
 
   async function enableNotifications() {
     const button =
-      document.getElementById(
-        "notificationButton"
-      );
+      document.getElementById("notificationButton");
 
     const status =
-      document.getElementById(
-        "notificationStatus"
-      );
+      document.getElementById("notificationStatus");
 
     try {
       if (
@@ -1366,17 +1637,11 @@
         ||
         !("PushManager" in window)
       ) {
-        alert(
-          "この端末ではWeb Pushを利用できません。"
-        );
+        alert("この端末ではWeb Pushを利用できません。");
         return;
       }
 
-      if (
-        isIOS()
-        &&
-        !isStandalone()
-      ) {
+      if (isIOS() && !isStandalone()) {
         alert(
           "iPhone / iPadではSafariの共有ボタンから"
           + "『ホーム画面に追加』し、"
@@ -1401,21 +1666,17 @@
       }
 
       let subscription =
-        await registration
-          .pushManager
-          .getSubscription();
+        await registration.pushManager.getSubscription();
 
       if (!subscription) {
         subscription =
-          await registration
-            .pushManager
-            .subscribe({
-              userVisibleOnly: true,
-              applicationServerKey:
-                urlBase64ToUint8Array(
-                  VAPID_PUBLIC_KEY
-                )
-            });
+          await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey:
+              urlBase64ToUint8Array(
+                VAPID_PUBLIC_KEY
+              )
+          });
       }
 
       button.textContent = "通知 ON";
@@ -1460,14 +1721,10 @@
 
   async function copySubscription() {
     const text =
-      document.getElementById(
-        "subscriptionText"
-      ).value;
+      document.getElementById("subscriptionText").value;
 
     if (!text) {
-      alert(
-        "まだ通知登録データがありません。"
-      );
+      alert("まだ通知登録データがありません。");
       return;
     }
 
@@ -1475,9 +1732,7 @@
       await navigator.clipboard.writeText(text);
       alert("コピーしました。");
     } catch {
-      alert(
-        "コピーできませんでした。"
-      );
+      alert("コピーできませんでした。");
     }
   }
 
@@ -1486,9 +1741,12 @@
     async () => {
       renderWatchlist();
 
-      loadTodayIr();
+      // 今日の精密結果を読み込み。
+      // 今日の結果がまだ無ければ、自動で精密採点を開始する。
+      loadTodayIr(false);
 
-      const ptsInput = document.getElementById("ptsInput");
+      const ptsInput =
+        document.getElementById("ptsInput");
 
       ptsInput.addEventListener("keydown", event => {
         if (event.key === "Enter") {
@@ -1497,7 +1755,8 @@
         }
       });
 
-      const irSearchInput = document.getElementById("irSearchInput");
+      const irSearchInput =
+        document.getElementById("irSearchInput");
 
       irSearchInput.addEventListener("keydown", event => {
         if (event.key === "Enter") {
@@ -1511,26 +1770,15 @@
           await registerServiceWorker();
 
         const subscription =
-          await registration
-            .pushManager
-            .getSubscription();
+          await registration.pushManager.getSubscription();
 
         if (subscription) {
           const button =
-            document.getElementById(
-              "notificationButton"
-            );
+            document.getElementById("notificationButton");
 
-          button.textContent =
-            "通知 ON";
-
-          button.classList.remove(
-            "btn-primary"
-          );
-
-          button.classList.add(
-            "btn-green"
-          );
+          button.textContent = "通知 ON";
+          button.classList.remove("btn-primary");
+          button.classList.add("btn-green");
 
           document.getElementById(
             "notificationStatus"
