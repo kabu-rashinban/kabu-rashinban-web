@@ -274,6 +274,94 @@
     .watch-item:last-child { border-bottom: 0; }
     .watch-main { min-width: 0; }
 
+    .watch-stock-card {
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      padding: 15px;
+      margin-top: 12px;
+      background: #fff;
+    }
+
+    .watch-stock-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .watch-stock-title {
+      min-width: 0;
+    }
+
+    .watch-stock-title strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .watch-stock-title span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .watch-actions {
+      display: flex;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+
+    .watch-actions .btn {
+      padding: 9px 11px;
+      font-size: 12px;
+    }
+
+    .watch-alert-box {
+      margin-top: 12px;
+      padding: 13px;
+      border-radius: 14px;
+      background: #f7f9fd;
+      border: 1px solid var(--line);
+    }
+
+    .watch-alert-box h4 {
+      margin: 0 0 10px;
+      font-size: 14px;
+    }
+
+    .watch-alert-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .watch-alert-field label {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .watch-alert-field input {
+      padding: 10px 11px;
+      border-radius: 11px;
+      background: #fff;
+    }
+
+    .watch-note {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .watch-stock-status {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .watch-code {
       font-weight: 800;
       font-size: 17px;
@@ -486,6 +574,10 @@
       .metric-grid { grid-template-columns: 1fr; }
       .ir-head { flex-direction: column; }
       .ir-score { font-size: 20px; }
+      .watch-alert-grid { grid-template-columns: 1fr; }
+      .watch-stock-head { flex-direction: column; }
+      .watch-actions { width: 100%; }
+      .watch-actions .btn { flex: 1; width: auto; }
     }
   </style>
 </head>
@@ -615,24 +707,42 @@
     <div class="card">
       <h3>＋ 監視銘柄を追加</h3>
       <p>
-        この端末専用の監視リストです。
-        他の人の端末とは混ざりません。
+        銘柄コードを登録すると、株価・前日比・出来高と
+        アラート設定をこの画面で確認できます。
       </p>
 
       <div class="input-row">
         <input
           id="watchInput"
           type="text"
-          placeholder="例：7746 岡本硝子"
+          inputmode="text"
+          maxlength="30"
+          autocomplete="off"
+          placeholder="例：7746 / 7746 岡本硝子"
         >
-        <button class="btn btn-primary" onclick="addWatchItem()">
+        <button
+          id="watchAddButton"
+          class="btn btn-primary"
+          onclick="addWatchItem()"
+        >
           追加
         </button>
       </div>
+
+      <div id="watchAddStatus" class="status"></div>
     </div>
 
     <div class="card">
-      <h3>登録中</h3>
+      <div class="section-title" style="margin:0">
+        <h3 style="margin:0">登録中</h3>
+        <button
+          class="btn btn-soft"
+          onclick="renderWatchlist(true)"
+        >
+          株価更新
+        </button>
+      </div>
+
       <div id="watchList"></div>
     </div>
 
@@ -651,6 +761,11 @@
       </button>
 
       <div id="notificationStatus" class="status"></div>
+
+      <div class="notice" style="margin-top:12px">
+        現在、監視銘柄と目標価格はこの端末に保存されます。
+        v2のD1対応で、ユーザーごとのPush通知設定とクラウド連携します。
+      </div>
 
       <details class="tech-details">
         <summary>通知登録データを表示</summary>
@@ -1517,6 +1632,53 @@
     window.open(currentPtsSourceUrl, "_blank");
   }
 
+  function normalizeWatchItem(item) {
+    if (typeof item === "string") {
+      const value = item.trim().replace(/\s+/g, " ");
+      const parts = value.split(" ");
+      const code = String(parts.shift() || "").toUpperCase();
+
+      if (!/^[0-9A-Z]{4}$/.test(code)) {
+        return null;
+      }
+
+      return {
+        code,
+        name: parts.join(" "),
+        target1: null,
+        target2: null,
+        pct: 5.0
+      };
+    }
+
+    if (!item || typeof item !== "object") {
+      return null;
+    }
+
+    const code = String(item.code || "").trim().toUpperCase();
+
+    if (!/^[0-9A-Z]{4}$/.test(code)) {
+      return null;
+    }
+
+    return {
+      code,
+      name: String(item.name || "").trim(),
+      target1:
+        item.target1 === null || item.target1 === ""
+          ? null
+          : Number(item.target1),
+      target2:
+        item.target2 === null || item.target2 === ""
+          ? null
+          : Number(item.target2),
+      pct:
+        Number.isFinite(Number(item.pct))
+          ? Number(item.pct)
+          : 5.0
+    };
+  }
+
   function loadWatchlist() {
     try {
       const raw = localStorage.getItem(WATCHLIST_KEY);
@@ -1525,68 +1687,489 @@
 
       const parsed = JSON.parse(raw);
 
-      return Array.isArray(parsed)
-        ? parsed
-        : [];
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .map(normalizeWatchItem)
+        .filter(Boolean);
+
     } catch {
       return [];
     }
   }
 
   function saveWatchlist(items) {
+    const normalized = items
+      .map(normalizeWatchItem)
+      .filter(Boolean);
+
     localStorage.setItem(
       WATCHLIST_KEY,
-      JSON.stringify(items)
+      JSON.stringify(normalized)
     );
   }
 
-  function normalizeWatchValue(value) {
-    return value
+  function defaultTarget(price, multiplier) {
+    const value = Number(price);
+
+    if (!Number.isFinite(value) || value <= 0) {
+      return null;
+    }
+
+    return Math.round(value * multiplier / 10) * 10;
+  }
+
+  function formatVolume(value) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+      return "-";
+    }
+
+    return new Intl.NumberFormat("ja-JP").format(number) + "株";
+  }
+
+  async function preferredCompanyName(code, fallback = "") {
+    try {
+      const japaneseName =
+        await fetchCompanyName(code);
+
+      if (japaneseName) {
+        return japaneseName;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    return String(fallback || code).trim();
+  }
+
+  async function fetchStockSnapshot(code) {
+    const response = await fetch(
+      PTS_API
+      + "/api/stock?code="
+      + encodeURIComponent(code),
+      {
+        method: "GET",
+        cache: "no-store"
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.error || "株価を取得できませんでした。"
+      );
+    }
+
+    return data;
+  }
+
+  async function addWatchItem() {
+    const input =
+      document.getElementById("watchInput");
+
+    const status =
+      document.getElementById("watchAddStatus");
+
+    const button =
+      document.getElementById("watchAddButton");
+
+    const value = input.value
       .trim()
       .replace(/\s+/g, " ");
-  }
 
-  function addWatchItem() {
-    const input = document.getElementById("watchInput");
-    const value = normalizeWatchValue(input.value);
+    const parts = value.split(" ");
+    const code = String(parts.shift() || "").toUpperCase();
+    const typedName = parts.join(" ");
 
-    if (!value) {
-      alert("銘柄コードまたは銘柄名を入力してください。");
+    if (!/^[0-9A-Z]{4}$/.test(code)) {
+      status.textContent =
+        "4桁の銘柄コードを入力してください。例：7746 / 285A";
       return;
     }
 
     const items = loadWatchlist();
 
-    const exists = items.some(item =>
-      item.toLowerCase() === value.toLowerCase()
-    );
-
-    if (exists) {
-      alert("すでに監視銘柄に入っています。");
+    if (items.some(item => item.code === code)) {
+      status.textContent =
+        code + " はすでに監視銘柄に入っています。";
       return;
     }
 
-    items.push(value);
-    saveWatchlist(items);
+    button.disabled = true;
+    button.textContent = "確認中…";
+    status.textContent =
+      "銘柄と株価を確認しています…";
 
-    input.value = "";
-    renderWatchlist();
+    try {
+      let stock = null;
+
+      try {
+        stock = await fetchStockSnapshot(code);
+      } catch (error) {
+        console.error(error);
+      }
+
+      const name =
+        await preferredCompanyName(
+          code,
+          typedName
+          || stock?.name
+          || code
+        );
+
+      items.push({
+        code,
+        name,
+        target1:
+          stock
+            ? defaultTarget(stock.price, 1.05)
+            : null,
+        target2:
+          stock
+            ? defaultTarget(stock.price, 1.10)
+            : null,
+        pct: 5.0
+      });
+
+      saveWatchlist(items);
+
+      input.value = "";
+      status.textContent =
+        code + " " + name + " を追加しました。";
+
+      await renderWatchlist(true);
+
+    } catch (error) {
+      console.error(error);
+
+      status.textContent =
+        "追加でエラーが発生しました：" + error.message;
+
+    } finally {
+      button.disabled = false;
+      button.textContent = "追加";
+    }
   }
 
-  function removeWatchItem(index) {
-    const items = loadWatchlist();
-    items.splice(index, 1);
+  function removeWatchItem(code) {
+    const items =
+      loadWatchlist()
+        .filter(item => item.code !== code);
 
     saveWatchlist(items);
-    renderWatchlist();
+    renderWatchlist(false);
   }
 
-  function renderWatchlist() {
+  function saveWatchAlertSettings(code) {
     const items = loadWatchlist();
-    const list = document.getElementById("watchList");
-    const count = document.getElementById("watchCount");
+    const index =
+      items.findIndex(item => item.code === code);
 
-    count.textContent = items.length + "銘柄";
+    if (index < 0) {
+      return;
+    }
+
+    const target1Raw =
+      document.getElementById(
+        "watchTarget1_" + code
+      )?.value ?? "";
+
+    const target2Raw =
+      document.getElementById(
+        "watchTarget2_" + code
+      )?.value ?? "";
+
+    const pctRaw =
+      document.getElementById(
+        "watchPct_" + code
+      )?.value ?? "";
+
+    const target1 =
+      target1Raw === ""
+        ? null
+        : Number(target1Raw);
+
+    const target2 =
+      target2Raw === ""
+        ? null
+        : Number(target2Raw);
+
+    const pct =
+      pctRaw === ""
+        ? 5.0
+        : Number(pctRaw);
+
+    if (
+      target1 !== null
+      && (!Number.isFinite(target1) || target1 <= 0)
+    ) {
+      alert("第1目標を正しく入力してください。");
+      return;
+    }
+
+    if (
+      target2 !== null
+      && (!Number.isFinite(target2) || target2 <= 0)
+    ) {
+      alert("第2目標を正しく入力してください。");
+      return;
+    }
+
+    if (
+      target1 !== null
+      && target2 !== null
+      && target2 <= target1
+    ) {
+      alert("第2目標は第1目標より高く設定してください。");
+      return;
+    }
+
+    if (!Number.isFinite(pct) || pct <= 0) {
+      alert("上昇率アラートを正しく入力してください。");
+      return;
+    }
+
+    items[index] = {
+      ...items[index],
+      target1,
+      target2,
+      pct
+    };
+
+    saveWatchlist(items);
+
+    const status =
+      document.getElementById(
+        "watchStatus_" + code
+      );
+
+    if (status) {
+      status.textContent =
+        "アラート設定をこの端末に保存しました。";
+    }
+  }
+
+  function createWatchStockCard(item, stock) {
+    const card = document.createElement("div");
+    card.className = "watch-stock-card";
+
+    const name =
+      String(stock?.name || item.name || item.code);
+
+    const target1Value =
+      item.target1 ?? "";
+
+    const target2Value =
+      item.target2 ?? "";
+
+    const pctValue =
+      Number.isFinite(Number(item.pct))
+        ? Number(item.pct)
+        : 5.0;
+
+    const stockHtml = stock
+      ? `
+        <div class="metric-grid">
+          <div class="metric">
+            <div class="label">株価</div>
+            <div class="value">${escapeHtml(yen(stock.price))}</div>
+          </div>
+
+          <div class="metric">
+            <div class="label">前日比</div>
+            <div class="value">${escapeHtml(signedPct(stock.change_pct))}</div>
+          </div>
+
+          <div class="metric">
+            <div class="label">値幅</div>
+            <div class="value">${escapeHtml(signedYen(stock.change))}</div>
+          </div>
+
+          <div class="metric">
+            <div class="label">出来高</div>
+            <div class="value" style="font-size:17px">${escapeHtml(formatVolume(stock.volume))}</div>
+          </div>
+        </div>
+
+        <div class="watch-stock-status">
+          株価更新：${escapeHtml(stock.asof || "-")}
+          ${stock.source ? `｜${escapeHtml(stock.source)}` : ""}
+        </div>
+      `
+      : `
+        <div class="notice">
+          株価を取得できませんでした。時間をおいて「更新」を押してください。
+        </div>
+      `;
+
+    card.innerHTML = `
+      <div class="watch-stock-head">
+        <div class="watch-stock-title">
+          <strong>${escapeHtml(item.code)} ${escapeHtml(name)}</strong>
+          <span>監視中</span>
+        </div>
+
+        <div class="watch-actions">
+          <button class="btn btn-soft" data-action="refresh">
+            更新
+          </button>
+
+          <button class="btn btn-danger" data-action="delete">
+            削除
+          </button>
+        </div>
+      </div>
+
+      ${stockHtml}
+
+      <div class="watch-alert-box">
+        <h4>🔔 アラート設定</h4>
+
+        <div class="watch-alert-grid">
+          <div class="watch-alert-field">
+            <label>第1目標（円）</label>
+            <input
+              id="watchTarget1_${escapeHtml(item.code)}"
+              type="number"
+              min="1"
+              step="1"
+              value="${escapeHtml(target1Value)}"
+              placeholder="未設定"
+            >
+          </div>
+
+          <div class="watch-alert-field">
+            <label>第2目標（円）</label>
+            <input
+              id="watchTarget2_${escapeHtml(item.code)}"
+              type="number"
+              min="1"
+              step="1"
+              value="${escapeHtml(target2Value)}"
+              placeholder="未設定"
+            >
+          </div>
+
+          <div class="watch-alert-field">
+            <label>上昇率アラート（%）</label>
+            <input
+              id="watchPct_${escapeHtml(item.code)}"
+              type="number"
+              min="0.1"
+              step="0.1"
+              value="${escapeHtml(pctValue)}"
+            >
+          </div>
+        </div>
+
+        <button
+          class="btn btn-primary wide"
+          style="margin-top:10px"
+          data-action="save"
+        >
+          アラート設定を保存
+        </button>
+
+        <div
+          id="watchStatus_${escapeHtml(item.code)}"
+          class="watch-note"
+        >
+          現在はこの端末に保存。v2のD1対応でPush通知と連携します。
+        </div>
+      </div>
+    `;
+
+    card.querySelector('[data-action="refresh"]').onclick =
+      () => refreshSingleWatch(item.code);
+
+    card.querySelector('[data-action="delete"]').onclick =
+      () => removeWatchItem(item.code);
+
+    card.querySelector('[data-action="save"]').onclick =
+      () => saveWatchAlertSettings(item.code);
+
+    return card;
+  }
+
+  async function refreshSingleWatch(code) {
+    const items = loadWatchlist();
+    const index =
+      items.findIndex(item => item.code === code);
+
+    if (index < 0) {
+      return;
+    }
+
+    const wrapper =
+      document.getElementById(
+        "watchCard_" + code
+      );
+
+    try {
+      const stock =
+        await fetchStockSnapshot(code);
+
+      items[index].name =
+        await preferredCompanyName(
+          code,
+          items[index].name
+          || stock.name
+          || code
+        );
+
+      if (items[index].target1 === null) {
+        items[index].target1 =
+          defaultTarget(stock.price, 1.05);
+      }
+
+      if (items[index].target2 === null) {
+        items[index].target2 =
+          defaultTarget(stock.price, 1.10);
+      }
+
+      saveWatchlist(items);
+
+      if (wrapper) {
+        wrapper.innerHTML = "";
+        wrapper.appendChild(
+          createWatchStockCard(
+            items[index],
+            stock
+          )
+        );
+      }
+
+    } catch (error) {
+      console.error(error);
+
+      const status =
+        document.getElementById(
+          "watchStatus_" + code
+        );
+
+      if (status) {
+        status.textContent =
+          "株価更新に失敗しました：" + error.message;
+      }
+    }
+  }
+
+  async function renderWatchlist(forceRefresh = false) {
+    const items = loadWatchlist();
+    const list =
+      document.getElementById("watchList");
+
+    const count =
+      document.getElementById("watchCount");
+
+    count.textContent =
+      items.length + "銘柄";
+
     list.innerHTML = "";
 
     if (!items.length) {
@@ -1595,34 +2178,57 @@
       return;
     }
 
-    items.forEach((item, index) => {
-      const row = document.createElement("div");
-      row.className = "watch-item";
+    // 以前の文字列形式を自動で新形式へ移行
+    saveWatchlist(items);
 
-      const main = document.createElement("div");
-      main.className = "watch-main";
+    for (const item of items) {
+      const wrapper =
+        document.createElement("div");
 
-      const code = document.createElement("div");
-      code.className = "watch-code";
-      code.textContent = item;
+      wrapper.id =
+        "watchCard_" + item.code;
 
-      const sub = document.createElement("div");
-      sub.className = "watch-name";
-      sub.textContent = "この端末に保存されています";
+      wrapper.innerHTML =
+        '<div class="loading-card">株価を取得しています…</div>';
 
-      const del = document.createElement("button");
-      del.className = "btn btn-danger";
-      del.textContent = "削除";
-      del.onclick = () => removeWatchItem(index);
+      list.appendChild(wrapper);
 
-      main.appendChild(code);
-      main.appendChild(sub);
+      let stock = null;
 
-      row.appendChild(main);
-      row.appendChild(del);
+      try {
+        stock =
+          await fetchStockSnapshot(item.code);
+      } catch (error) {
+        console.error(error);
+      }
 
-      list.appendChild(row);
-    });
+      if (stock) {
+        item.name =
+          await preferredCompanyName(
+            item.code,
+            item.name
+            || stock.name
+            || item.code
+          );
+
+        if (item.target1 === null) {
+          item.target1 =
+            defaultTarget(stock.price, 1.05);
+        }
+
+        if (item.target2 === null) {
+          item.target2 =
+            defaultTarget(stock.price, 1.10);
+        }
+      }
+
+      wrapper.innerHTML = "";
+      wrapper.appendChild(
+        createWatchStockCard(item, stock)
+      );
+    }
+
+    saveWatchlist(items);
   }
 
   function urlBase64ToUint8Array(base64String) {
@@ -1784,7 +2390,7 @@
   window.addEventListener(
     "load",
     async () => {
-      renderWatchlist();
+      renderWatchlist(false);
 
       // 今日の精密結果を読み込み。
       // 今日の結果がまだ無ければ、自動で精密採点を開始する。
