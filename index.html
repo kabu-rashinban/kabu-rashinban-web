@@ -1959,7 +1959,7 @@
     card.className = "watch-stock-card";
 
     const name =
-      String(stock?.name || item.name || item.code);
+      String(item.name || stock?.name || item.code);
 
     const target1Value =
       item.target1 ?? "";
